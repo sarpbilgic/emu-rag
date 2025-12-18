@@ -1,0 +1,26 @@
+****  
+  
+**EASTERN MEDITERRANEAN UNIVERSITY**
+
+**THE APPLICATION BY-LAW OF VERTICAL TRANSFER PREPARATION PROGRAM FOR UNDERGRADUATE STUDIES**
+
+****
+
+**ENTRANCE EXAMS AND STUDENT ADMISSIONS BY-LAW**
+
+**(By-law under Article 11(4))**
+
+****
+
+**Brief Name** |  **1.** |  Eastern Mediterranean University Undergraduate Preparation Program Application for Vertical Transfers.   
+---|---|---  
+**Aim** |  **2.** |  This by-law aims to specify the rules for the Undergraduate Preparation Program application for vocational high school and open university school program graduates who have gained admission to Eastern Mediterranean University through the Selection Exam for Vertical Transfer.   
+**Scope** |  **3.** |  These regulations include the Preparation Program for Undergraduate Studies for students who are vertically transferred to EMU and who will continue their studies starting from the third year.  
+**Basis** |  **4.** |  This by-law is based on the educational protocol /agreement signed between the TRNC and the Turkish Republic.  
+**Preparation of the Undergraduate Studies Preparatory Programme** |  **5.** |  (a) Every faculty/school organises a two-semester preparatory programme of undergraduate studies for students who have gained admission to EMU based on the results of the Selection Exam for Vertical Transfer. Those enrolled in programs where the education is in English and who do not fulfill the English Proficiency requirements should take the English Proficiency test administered by the English Preparatory School. A preparation program for undergraduate studies is organised for those who become successful from this exam. Those who fail the English Proficiency Test follow the English Preparatory School program. Students who follow the English Preparatory School program are admitted to the preparatory program for undergraduate studies after having fulfilled the provisions of _the Education,__Examinations and Success By-law_. (b) Within the framework of Preparation Program for Undergraduate Studies, every department prepares a package program which corresponds to 70±2% of the total credit load of the first four semesters of the department’s undergraduate program. This package program is approved by the Senate upon the recommendation of the Faculty/School Board and announced by the Rector’s Office. (c) No special classes are opened for those who take the preparation program for undergraduate studies. These students attend courses with current students of the department in classes that already exist.   
+**Examinations and Evaluations** |  **6.** |  (a) Examinations, evaluations, end of semester grades and appeals to the exam results are conducted according to the relevant articles of the _Education,__Examinations and Success By-law_. (b) During the Preparation Program for Undergraduate Studies, students have to take and become successful from a specific number of courses that correspond to at least 70% of the total credits of the package program. At the end of the preparation program, those who registered before 2007 and who obtain a minimum CGPA of 1.55, or those who registered after 2007 and has an academic standing of ‘satisfactory progress’ and who obtain a minimum grade of ‘D’ from all courses, or who fail no more than two of the courses are deemed to have completed the Preparation program for Undergraduate Studies. (c) The maximum period of study for the Preparation Program for Undergraduate Studies is three semesters.  (d) In order to complete the Preparation Program for Undergraduate Studies, the student can benefit from the summer schools that open within the three semesters of study or at the end of the third semester in the case of the third semester being the spring semester. (e) Those who fail to complete the Preparation Program for Undergraduate Studies at the end of the third semester are dismissed from the program.  
+**Registering for the Undergraduate Program** |  **7.** |  Those who become successful from the Preparation Program for Undergraduate Studies register for the 5th semester of the undergraduate program.   
+**Coming into Force** |  **8.** |  This By-law comes into force following its approval by the Senate.  
+**Executive Power** |  **9.** |  This By-law is executed by the Rector.  
+  
+****

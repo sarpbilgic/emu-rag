@@ -1,0 +1,16 @@
+fastapi
+uvicorn 
+beautifulsoup4
+httpx
+requests
+openai
+langchain
+langchain-community
+langchain-core
+langchain-openai
+llama-index
+qdrant-client
+pydantic-settings
+html2text
+pdfplumber
+pymupdf4llm
