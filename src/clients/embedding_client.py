@@ -7,7 +7,9 @@ class EmbeddingClient:
     def __init__(self):
         self.embed_model = GeminiEmbedding(
             api_key=settings.gemini_api_key,
-            model_name="models/text-embedding-004",
+            model_name="models/gemini-embedding-001",
+            dimensions=3072,
+
         )
         LlamaSettings.embed_model = self.embed_model
 
