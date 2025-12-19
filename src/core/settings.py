@@ -3,11 +3,8 @@ from functools import lru_cache
 from typing import Optional
 
 class Settings(BaseSettings):
-    # Optional: Qdrant (can test without it)
-    qdrant_url: Optional[str] = "http://localhost:6333"
+    qdrant_url: Optional[str] = None
     qdrant_api_key: Optional[str] = None
-    
-    # Required: API keys for LLM and Embeddings
     gemini_api_key: str
     xai_api_key: str
     
