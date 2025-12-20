@@ -3,6 +3,7 @@ from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import Document
 from qdrant_client.http.models import Distance
+from typing import Optional, List
 from src.core.settings import settings
 
 class QdrantClientManager:
@@ -10,25 +11,37 @@ class QdrantClientManager:
         self.client = QdrantClient(
             url=settings.qdrant_url, 
             api_key=settings.qdrant_api_key
-
         )
         self.collection_name = collection_name
+
+    def clear_collection(self) -> bool:
+        try:
+            collections = self.client.get_collections().collections
+            exists = any(c.name == self.collection_name for c in collections)
+            
+            if exists:
+                self.client.delete_collection(self.collection_name)
+                print(f"[OK] Deleted collection: {self.collection_name}")
+            else:
+                print(f"Collection '{self.collection_name}' does not exist yet")
+            
+            return True
+        except Exception as e:
+            print(f"[ERROR] Failed to clear collection: {e}")
+            return False
 
     def get_vector_store(self) -> QdrantVectorStore:
         return QdrantVectorStore(
             client=self.client, 
             collection_name=self.collection_name,
-            distance=Distance.COSINE,
-            dimensions=3072
         )
 
     def get_storage_context(self) -> StorageContext:
         vector_store = self.get_vector_store()
         return StorageContext.from_defaults(vector_store=vector_store)
 
-    def get_query_engine(self, documents=None):
-        manager = QdrantClientManager()
-        storage_context = manager.get_storage_context()
+    def get_query_engine(self, documents: Optional[List[Document]] = None):
+        storage_context = self.get_storage_context()
         
         if documents:
             index = VectorStoreIndex.from_documents(
@@ -37,7 +50,7 @@ class QdrantClientManager:
             )
         else:
             index = VectorStoreIndex.from_vector_store(
-                manager.get_vector_store()
+                self.get_vector_store()
             )
         
         return index.as_query_engine()
