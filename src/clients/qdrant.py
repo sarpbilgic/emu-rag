@@ -55,3 +55,5 @@ class QdrantClientManager:
             )
         
         return index.as_query_engine()
+
+   

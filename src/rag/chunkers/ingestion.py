@@ -24,7 +24,6 @@ from llama_index.core.schema import BaseNode, TransformComponent
 
 from src.core.dependencies import get_embedding_client, get_qdrant_client
 
-# Setup logger for tenacity
 logger = logging.getLogger(__name__)
 
 
