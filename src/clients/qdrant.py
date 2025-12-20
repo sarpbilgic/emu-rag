@@ -5,6 +5,7 @@ from llama_index.core.schema import Document
 from qdrant_client.http.models import Distance
 from typing import Optional, List
 from src.core.settings import settings
+import logging
 
 class QdrantClientManager:
     def __init__(self, collection_name: str = "emu_regulations"):
@@ -21,13 +22,13 @@ class QdrantClientManager:
             
             if exists:
                 self.client.delete_collection(self.collection_name)
-                print(f"[OK] Deleted collection: {self.collection_name}")
+                logging.info(f"[OK] Deleted collection: {self.collection_name}")
             else:
-                print(f"Collection '{self.collection_name}' does not exist yet")
+                logging.info(f"Collection '{self.collection_name}' does not exist yet")
             
             return True
         except Exception as e:
-            print(f"[ERROR] Failed to clear collection: {e}")
+            logging.error(f"[ERROR] Failed to clear collection: {e}")
             return False
 
     def get_vector_store(self) -> QdrantVectorStore:

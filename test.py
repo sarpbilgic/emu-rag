@@ -1,0 +1,2 @@
+from fastembed import TextEmbedding
+

@@ -16,3 +16,9 @@ pydantic-settings
 html2text
 pdfplumber
 pymupdf4llm
+tenacity
+llama-index-embeddings-huggingface
+torch
+sentence-transformers
+transformers
+llama-index-embeddings-fastembed

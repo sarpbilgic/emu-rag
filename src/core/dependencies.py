@@ -8,7 +8,6 @@ from src.clients.embedding_client import EmbeddingClient
 from src.clients.qdrant import QdrantClientManager
 
 
-# Singleton instances (created once, reused)
 @lru_cache()
 def get_llm_client() -> LLMClient:
     return LLMClient()

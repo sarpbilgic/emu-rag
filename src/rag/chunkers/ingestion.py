@@ -3,15 +3,29 @@ Production-grade markdown ingestion pipeline for EMU regulations.
 Uses MarkdownNodeParser for automatic header hierarchy preservation.
 """
 import re
+import time
 from pathlib import Path
 from typing import List, Dict, Callable
 
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+    before_sleep_log,
+    after_log
+)
+import logging
+
 from llama_index.core import Document
-from llama_index.core.node_parser import MarkdownNodeParser
+from llama_index.core.node_parser import MarkdownNodeParser, SentenceSplitter
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import BaseNode, TransformComponent
 
 from src.core.dependencies import get_embedding_client, get_qdrant_client
+
+# Setup logger for tenacity
+logger = logging.getLogger(__name__)
 
 
 class MetadataEnricher(TransformComponent):
@@ -55,7 +69,6 @@ class EMUMarkdownProcessor:
             with open(md_file, "r", encoding="utf-8") as f:
                 content = f.read()
             
-            # Extract document-level metadata
             metadata = self._extract_document_metadata(md_file, content)
             
             doc = Document(
@@ -65,7 +78,7 @@ class EMUMarkdownProcessor:
             )
             documents.append(doc)
             
-        print(f"\n[OK] Loaded {len(documents)} markdown files")
+        logging.info(f"Loaded {len(documents)} markdown files")
         return documents
     
     def _extract_document_metadata(self, file_path: Path, content: str) -> Dict:
@@ -117,6 +130,7 @@ class EMUMarkdownProcessor:
                 # MarkdownNodeParser auto-adds header_path metadata
                 MarkdownNodeParser(),
                 # Custom metadata enrichment
+                SentenceSplitter(chunk_size=1024, chunk_overlap=100),
                 MetadataEnricher(),
                 # Embedding (must be last transformation)
                 embed_model,
@@ -126,70 +140,144 @@ class EMUMarkdownProcessor:
         
         return pipeline
     
-    def ingest_documents(self, documents: List[Document]) -> List[BaseNode]:
-        """Ingest documents into Qdrant using the pipeline."""
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(Exception),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        after=after_log(logger, logging.INFO)
+    )
+    def _process_batch_with_retry(
+        self, 
+        pipeline: IngestionPipeline, 
+        batch: List[Document],
+        batch_num: int,
+        total_batches: int
+    ) -> List[BaseNode]:
+        """
+        Process a batch of documents with automatic retry logic.
+        
+        Uses tenacity for exponential backoff retry on failures.
+        """
+        logging.info(f"\n{'='*60}")
+        logging.info(f"Processing batch {batch_num}/{total_batches}")
+        logging.info(f"Documents: {[doc.metadata['source'] for doc in batch]}")
+        logging.info(f"{'='*60}")
+        
+        # Run the pipeline for this batch
+        nodes = pipeline.run(documents=batch, show_progress=True)
+        logging.info(f"Batch {batch_num} completed: {len(nodes)} nodes created")
+        
+        return nodes
+    
+    def ingest_documents(self, documents: List[Document], batch_size: int = 5) -> List[BaseNode]:
+        """
+        Ingest documents into Qdrant using the pipeline in batches.
+        
+        Args:
+            documents: List of documents to ingest
+            batch_size: Number of documents to process per batch (default: 5)
+                       Using local HuggingFace embeddings, no API rate limits
+        
+        Returns:
+            List of all ingested nodes
+        """
         qdrant_manager = get_qdrant_client()
         
-        print("\nStarting ingestion pipeline...")
-        print(f"Target collection: {qdrant_manager.collection_name}")
+        logging.info("\nStarting batched ingestion pipeline...")
+        logging.info(f"Target collection: {qdrant_manager.collection_name}")
+        logging.info(f"Batch size: {batch_size} document(s) per batch")
+        logging.info(f"Total documents: {len(documents)}")
+        logging.info(f"Estimated batches: {(len(documents) + batch_size - 1) // batch_size}")
+        logging.info("Using local FastEmbed embeddings (no API rate limits)")
         
         pipeline = self.create_ingestion_pipeline()
+        all_nodes = []
         
-        # Run the pipeline - handles chunking, metadata, embedding, storage
-        nodes = pipeline.run(documents=documents, show_progress=True)
+        # Process documents in batches
+        total_batches = (len(documents) + batch_size - 1) // batch_size
         
-        print(f"\n[OK] Successfully ingested {len(nodes)} nodes into Qdrant")
-        return nodes
+        for batch_idx in range(0, len(documents), batch_size):
+            batch = documents[batch_idx:batch_idx + batch_size]
+            batch_num = (batch_idx // batch_size) + 1
+            
+            try:
+                # Process batch with automatic retry via tenacity
+                nodes = self._process_batch_with_retry(
+                    pipeline=pipeline,
+                    batch=batch,
+                    batch_num=batch_num,
+                    total_batches=total_batches
+                )
+                all_nodes.extend(nodes)
+                
+                # Small delay between batches for stability
+                if batch_idx + batch_size < len(documents):
+                    delay = 1  # 1 second between batches
+                    print(f"⏳ Waiting {delay}s before next batch...")
+                    time.sleep(delay)
+                    
+            except Exception as e:
+                print(f"\n✗ Batch {batch_num} failed after all retries: {e}")
+                raise
+        
+        logging.info(f"\n{'='*60}")
+        logging.info(f"[OK] Successfully ingested {len(all_nodes)} total nodes into Qdrant")
+        logging.info(f"{'='*60}")
+        return all_nodes
 
 
 def main():
     """Main ingestion script."""
-    print("=" * 60)
-    print("EMU RAG - Markdown Ingestion Pipeline")
-    print("=" * 60)
+    logging.info("=" * 60)
+    logging.info("EMU RAG - Markdown Ingestion Pipeline")
+    logging.info("=" * 60)
     
     processor = EMUMarkdownProcessor()
     documents = processor.load_markdown_files()
     
     if not documents:
-        print("[ERROR] No markdown files found in emu_rag_data/")
+        logging.error("[ERROR] No markdown files found in emu_rag_data/")
         return
     
     # Show summary
-    print("\n" + "=" * 60)
-    print("Document Summary:")
-    print("=" * 60)
+    logging.info("\n" + "=" * 60)
+    logging.info("Document Summary:")
+    logging.info("=" * 60)
     for doc in documents:
-        print(f"  - {doc.metadata['source']}")
-        print(f"    Type: {doc.metadata.get('type', 'unknown')}")
-        print(f"    Title: {doc.metadata.get('title', 'N/A')[:50]}...")
-        print(f"    Tables: {doc.metadata.get('table_count', 0)}")
+        logging.info(f"  - {doc.metadata['source']}")
+        logging.info(f"    Type: {doc.metadata.get('type', 'unknown')}")
+        logging.info(f"    Title: {doc.metadata.get('title', 'N/A')[:50]}...")
+        logging.info(f"    Tables: {doc.metadata.get('table_count', 0)}")
     
     # Clear existing vectors before ingestion
-    print("\n" + "=" * 60)
-    print("Clearing existing collection...")
-    print("=" * 60)
+    logging.info("\n" + "=" * 60)
+    logging.info("Clearing existing collection...")
+    logging.info("=" * 60)
     qdrant = get_qdrant_client()
     qdrant.clear_collection()
     
-    # Run ingestion
+    # Run ingestion with batching
     try:
-        nodes = processor.ingest_documents(documents)
+        # Process 5 documents at a time (local embeddings, no API limits)
+        nodes = processor.ingest_documents(documents, batch_size=5)
         
-        print("\n" + "=" * 60)
-        print("[OK] INGESTION COMPLETE")
-        print("=" * 60)
-        print(f"Documents processed: {len(documents)}")
-        print(f"Chunks created: {len(nodes)}")
+        logging.info("\n" + "=" * 60)
+        logging.info("[OK] INGESTION COMPLETE")
+        logging.info("=" * 60)
+        logging.info(f"Documents processed: {len(documents)}")
+        logging.info(f"Chunks created: {len(nodes)}")
         
         # Show sample metadata from first node
         if nodes:
-            print(f"\nSample chunk metadata:")
+            logging.info(f"\nSample chunk metadata:")
             for key, value in list(nodes[0].metadata.items())[:8]:
                 print(f"  {key}: {value}")
         
     except Exception as e:
-        print(f"\n[ERROR] Ingestion failed: {e}")
+        logging.error(f"\n[ERROR] Ingestion failed: {e}")
+        import traceback
+        traceback.print_exc()
         raise
 
 
