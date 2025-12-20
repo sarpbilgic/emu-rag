@@ -9,8 +9,8 @@ langchain-community
 langchain-core
 langchain-openai
 llama-index
-llama-index-embeddings-gemini
 llama-index-llms-openai
+llama-index-vector-stores-qdrant
 qdrant-client
 pydantic-settings
 html2text
