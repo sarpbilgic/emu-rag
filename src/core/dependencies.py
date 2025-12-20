@@ -23,7 +23,7 @@ def get_qdrant_client() -> QdrantClientManager:
     return QdrantClientManager()
 
 
-# Convenience: Get all clients at once for RAG pipeline
+
 class RAGClients:
     def __init__(self):
         self.llm = get_llm_client()
