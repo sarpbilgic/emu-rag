@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
+from src.api.endpoints import router
 
 app = FastAPI(
     title="EMU RAG API",
@@ -16,4 +17,7 @@ async def root():
 async def health():
     return {"message": "OK"}
 
-uvicorn.run(app, host="0.0.0.0", port=8000)
+app.include_router(router)
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)
