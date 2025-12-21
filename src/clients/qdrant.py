@@ -56,4 +56,11 @@ class QdrantClientManager:
         
         return index.as_query_engine()
 
+    def get_retriever(self, top_k: int = 5):
+        storage_context = self.get_storage_context()
+        index = VectorStoreIndex.from_vector_store(
+            self.get_vector_store(),
+            storage_context=storage_context
+        )
+        return index.as_retriever(similarity_top_k=top_k)
    
