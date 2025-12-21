@@ -14,7 +14,6 @@ class EmbeddingClient:
         LlamaSettings.embed_model = self.embed_model
         logging.info("Embedding model loaded successfully")
 
-
     def embed_documents(self, documents: list[str]) -> list[list[float]]:
         return self.embed_model.get_text_embedding_batch(documents)
 
@@ -24,4 +23,3 @@ class EmbeddingClient:
     def get_embed_model(self) -> FastEmbedEmbedding:
         return self.embed_model
 
-embedding_client = EmbeddingClient()
