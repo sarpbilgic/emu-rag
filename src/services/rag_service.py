@@ -1,14 +1,18 @@
+from __future__ import annotations
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core import ChatPromptTemplate
 from llama_index.core.schema import NodeWithScore
-from src.core.dependencies import RAGClients
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 from pydantic import BaseModel
 from src.schemas.rag import RAGResponse, SourceDocument, RetrievalResult
 import json
 
+if TYPE_CHECKING:
+    from src.core.dependencies import RAGClients
+
 class RAGService:
-    def __init__(self, rag_clients: RAGClients):
+    def __init__(self, rag_clients: "RAGClients"):
+        from src.core.dependencies import RAGClients
         self.clients = rag_clients
         self.prompt_template = ChatPromptTemplate.from_messages([
             ChatMessage(
