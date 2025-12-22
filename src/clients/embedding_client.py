@@ -9,7 +9,7 @@ class EmbeddingClient:
         logging.info("Initializing FastEmbed embeddings...")
         self.embed_model = FastEmbedEmbedding(
             model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
-            cache_folder="./model_cache",
+            cache_dir="./model_cache",
             )
         LlamaSettings.embed_model = self.embed_model
         logging.info("Embedding model loaded successfully")
