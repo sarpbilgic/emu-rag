@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import TYPE_CHECKING
 from src.core.dependencies import get_rag_service
-from src.schemas.rag import RAGResponse
+from src.api.schemas.rag import RAGResponse
 
 if TYPE_CHECKING:
-    from src.services.rag_service import RAGService
+    from src.api.services.rag_service import RAGService
 
 router = APIRouter(
     prefix="/api/v1/rag",
