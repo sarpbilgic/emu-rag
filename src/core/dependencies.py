@@ -2,6 +2,7 @@ from functools import lru_cache
 from src.clients.llm import LLMClient
 from src.clients.embedding_client import EmbeddingClient
 from src.clients.qdrant import QdrantClientManager
+from src.clients.redis import RedisClient
 from src.api.services.rag_service import RAGService
 from src.clients.postgres import async_session
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -21,14 +22,16 @@ def get_embedding_client() -> EmbeddingClient:
 def get_qdrant_client() -> QdrantClientManager:
     return QdrantClientManager()
 
-
+@lru_cache()
+def get_redis_client() -> RedisClient:
+    return RedisClient()
 
 class RAGClients:
     def __init__(self):
         self.llm = get_llm_client()
         self.embeddings = get_embedding_client()
         self.qdrant = get_qdrant_client()
-
+        self.redis = get_redis_client()
 
 @lru_cache()
 def get_rag_clients() -> RAGClients:
