@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 import uvicorn
-from src.api.endpoints import router
+from src.api.routers.rag import router
 
 app = FastAPI(
     title="EMU RAG API",
