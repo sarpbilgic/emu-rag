@@ -28,5 +28,3 @@ class LLMClient:
     def get_llm(self) -> OpenAI:
         return self.llm
 
-
-llm_client = LLMClient()
