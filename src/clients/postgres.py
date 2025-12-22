@@ -16,6 +16,4 @@ async_session = sessionmaker(
     expire_on_commit=False,
 )
 
-class Base(SQLModel):
-    pass
 

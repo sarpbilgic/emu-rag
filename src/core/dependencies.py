@@ -1,7 +1,3 @@
-"""
-FastAPI Dependency Injection for clients.
-Use with: Depends(get_llm_client), Depends(get_embedding_client), etc.
-"""
 from functools import lru_cache
 from src.clients.llm import LLMClient
 from src.clients.embedding_client import EmbeddingClient
