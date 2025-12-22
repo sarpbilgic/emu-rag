@@ -6,8 +6,11 @@ from src.schemas.rag import RAGResponse
 if TYPE_CHECKING:
     from src.services.rag_service import RAGService
 
-router = APIRouter()
+router = APIRouter(
+    prefix="/api/v1/rag",
+    tags=["RAG"],
+)
 
-@router.post("/rag")
-async def rag(query: str, rag_service: "RAGService" = Depends(get_rag_service)) -> RAGResponse:
-    return rag_service.generate_response(query)
+@router.post("/ask", response_model=RAGResponse)
+async def ask(query: str, rag_service: "RAGService" = Depends(get_rag_service)):
+    return await rag_service.generate_response(query)

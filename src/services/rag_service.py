@@ -2,16 +2,14 @@ from __future__ import annotations
 from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core import ChatPromptTemplate
 from llama_index.core.schema import NodeWithScore
-from typing import List, Dict, TYPE_CHECKING
+from typing import List, Dict
 from pydantic import BaseModel
 from src.schemas.rag import RAGResponse, SourceDocument, RetrievalResult
 import json
-
-if TYPE_CHECKING:
-    from src.core.dependencies import RAGClients
+import asyncio
 
 class RAGService:
-    def __init__(self, rag_clients: "RAGClients"):
+    def __init__(self, rag_clients: RAGClients):
         from src.core.dependencies import RAGClients
         self.clients = rag_clients
         self.prompt_template = ChatPromptTemplate.from_messages([
@@ -86,13 +84,13 @@ class RAGService:
             return ' '.join(word.capitalize() for word in text_parts)
         return name
     
-    def generate_response(self, query: str, top_k: int = 5) -> RAGResponse:
+    async def generate_response(self, query: str, top_k: int = 5) -> RAGResponse:
         retrieval_result = self.retrieve_context(query, top_k)
 
         prompt = self.format_prompt(query, context=retrieval_result.context)
         llm = self.clients.llm.get_llm()
         # TODO: streaming support after frontend is ready
-        response = llm.chat(prompt)
+        response = await llm.achat(prompt)
 
         answer = str(response.message.content)
         has_answer = "don't know" not in answer.lower()
