@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import TYPE_CHECKING
-from src.core.dependencies import get_rag_service
+from src.api.dependencies.clients import get_rag_service
 from src.api.schemas.rag import RAGResponse
 
 if TYPE_CHECKING:

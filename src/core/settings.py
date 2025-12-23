@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     xai_api_key: str
     database_url: str
     redis_url: str
+    algorithm: str
+    secret_key: str
+    access_token_expire_minutes: int = 60 * 24
     
     model_config = SettingsConfigDict(
         env_file=".env", 
