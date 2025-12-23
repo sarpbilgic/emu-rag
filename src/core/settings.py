@@ -11,7 +11,11 @@ class Settings(BaseSettings):
     algorithm: str
     secret_key: str
     access_token_expire_minutes: int = 60 * 24
-    
+    microsoft_client_id: str 
+    microsoft_client_secret: str
+    microsoft_tenant_id: str
+    api_base_url: str
+
     model_config = SettingsConfigDict(
         env_file=".env", 
         env_file_encoding="utf-8",
@@ -30,6 +34,10 @@ class Settings(BaseSettings):
             else:
                 url = base_url
         return url
+
+    @cached_property
+    def microsoft_redirect_uri(self) -> str:
+        return f"{self.api_base_url}/api/v1/auth/microsoft/callback"
 
 @lru_cache
 def get_settings() -> Settings:

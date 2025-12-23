@@ -1,10 +1,13 @@
-from src.api.services.auth_service import AuthService
 from functools import lru_cache
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 from src.api.services.auth_service import AuthService
 from src.api.models.user import User
+from src.api.dependencies.clients import get_db
+from typing import Optional, Annotated
+
 
 @lru_cache()
 def get_auth_service() -> AuthService:
@@ -16,9 +19,9 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), 
-    db: AsyncSession = Depends(get_db),
-    auth_service: AuthService = Depends(get_auth_service)
+    token: Annotated[str, Depends(oauth2_scheme)], 
+    db: Annotated[AsyncSession, Depends(get_db)],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ) -> Optional[User]:
     if not token:
         return None
@@ -34,7 +37,7 @@ async def get_current_user(
     return user
     
 async def get_current_user_required(
-    user: Optional[User] = Depends(get_current_user),
+    user: Annotated[Optional[User], Depends(get_current_user)],
 ) -> User:
     if not user:
         raise HTTPException(
@@ -43,3 +46,6 @@ async def get_current_user_required(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+
