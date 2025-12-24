@@ -6,6 +6,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from src.api.services.auth_service import AuthService
 from src.api.models.user import User
 from src.api.dependencies.clients import get_db
+from src.api.selectors.user.get_user import get_user_by_email
 from typing import Optional, Annotated
 
 
@@ -31,9 +32,7 @@ async def get_current_user(
     user_email = payload.get("sub")
     if user_email is None:
         return None
-    statement = select(User).where(User.email == user_email)
-    result = await db.exec(statement)
-    user = result.first()
+    user = await get_user_by_email(user_email, db)
     return user
     
 async def get_current_user_required(

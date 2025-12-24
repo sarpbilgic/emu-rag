@@ -22,7 +22,7 @@ from llama_index.core.node_parser import MarkdownNodeParser, SentenceSplitter
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.schema import BaseNode, TransformComponent
 
-from src.core.dependencies import get_embedding_client, get_qdrant_client
+from src.api.dependencies.clients import get_embedding_client, get_qdrant_client
 
 logger = logging.getLogger(__name__)
 

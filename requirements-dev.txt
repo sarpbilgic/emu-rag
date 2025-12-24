@@ -17,6 +17,7 @@ openai
 llama-index
 llama-index-llms-openai
 llama-index-vector-stores-qdrant
+llama-index-storage-chat-store-redis
 qdrant-client
 html2text
 pdfplumber

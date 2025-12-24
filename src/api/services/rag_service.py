@@ -6,7 +6,7 @@ from src.api.schemas.rag import RAGResponse, SourceDocument, RetrievalResult
 
 class RAGService:
     def __init__(self, rag_clients: RAGClients):
-        from src.core.dependencies import RAGClients
+        from src.api.dependencies.clients import RAGClients
         self.clients = rag_clients
         self.prompt_template = ChatPromptTemplate.from_messages([
             ChatMessage(
