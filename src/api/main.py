@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 import uvicorn
-from src.api.routers.rag import router
+from src.api.routers.rag import router as rag_router
+from src.api.routers.auth import router as auth_router
 
 app = FastAPI(
     title="EMU RAG API",
@@ -17,6 +18,8 @@ async def root():
 async def health():
     return {"message": "OK"}
 
-app.include_router(router)
+app.include_router(auth_router)
+app.include_router(rag_router)
+
 
 """uvicorn.run(app, host="0.0.0.0", port=8000)"""
