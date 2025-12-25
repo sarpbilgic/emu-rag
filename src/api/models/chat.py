@@ -21,6 +21,7 @@ class ChatSession(SQLModel, table=True):
     user_id: Optional[int] = Field(default=None, foreign_key="users.id", nullable=True)
     user: Optional["User"] = Relationship(back_populates="sessions")
     messages: List["ChatMessage"] = Relationship(back_populates="session", cascade_delete=True)
+    is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
