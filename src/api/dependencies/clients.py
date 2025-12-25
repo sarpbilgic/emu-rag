@@ -4,6 +4,7 @@ from src.clients.qdrant import QdrantClientManager
 from src.clients.redis import RedisClient
 from src.clients.postgres import async_session
 from src.api.services.rag_service import RAGService
+from src.api.services.chat_history_service import ChatHistoryService
 from functools import lru_cache
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import AsyncGenerator
@@ -25,12 +26,17 @@ def get_qdrant_client() -> QdrantClientManager:
 def get_redis_client() -> RedisClient:
     return RedisClient()
 
+@lru_cache()
+def get_chat_history_service() -> ChatHistoryService:
+    return ChatHistoryService(get_redis_client())
+
 class RAGClients:
     def __init__(self):
         self.llm = get_llm_client()
         self.embeddings = get_embedding_client()
         self.qdrant = get_qdrant_client()
         self.redis = get_redis_client()
+        self.chat_history = get_chat_history_service()
 
 @lru_cache()
 def get_rag_clients() -> RAGClients:

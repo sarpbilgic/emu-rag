@@ -15,7 +15,7 @@ def get_auth_service() -> AuthService:
     return AuthService()
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v1/auth/login", 
+    tokenUrl="/api/v1/auth/microsoft/callback", 
     auto_error=False
 )
 
@@ -46,5 +46,8 @@ async def get_current_user_required(
         )
     return user
 
-
+async def get_current_user_optional(
+    user: Annotated[Optional[User], Depends(get_current_user)],
+) -> Optional[User]:
+    return user
 

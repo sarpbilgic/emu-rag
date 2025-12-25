@@ -11,13 +11,15 @@ class Settings(BaseSettings):
     algorithm: str
     secret_key: str
     access_token_expire_minutes: int = 60 * 24
-    microsoft_client_id: str 
+    microsoft_client_id: str
     microsoft_client_secret: str
     microsoft_tenant_id: str
     api_base_url: str
+    anonymous_chat_ttl: int = 86400
+    authenticated_chat_ttl: Optional[int] = None
 
     model_config = SettingsConfigDict(
-        env_file=".env", 
+        env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False

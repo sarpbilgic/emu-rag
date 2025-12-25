@@ -1,34 +1,50 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
+import uuid
 from llama_index.core.llms import ChatMessage, MessageRole
-from llama_index.core import ChatPromptTemplate
 from src.api.schemas.rag import RAGResponse, SourceDocument, RetrievalResult
 
+if TYPE_CHECKING:
+    from sqlmodel.ext.asyncio.session import AsyncSession
+    from src.api.models.user import User
+    from src.api.dependencies.clients import RAGClients
+
 class RAGService:
-    def __init__(self, rag_clients: RAGClients):
-        from src.api.dependencies.clients import RAGClients
+    SYSTEM_PROMPT = (
+        "You are a helpful assistant for Eastern Mediterranean University regulations.\n"
+        "Your task is to answer questions based on the university regulation documents provided below.\n\n"
+        "Guidelines:\n"
+        "- Carefully read through all provided context sections\n"
+        "- Answer the question in the same language as the question\n"
+        "- If the context contains relevant information, provide a clear and comprehensive answer\n"
+        "- Quote specific articles, rules, or sections when applicable\n"
+        "- Only say 'I don't know' if the context truly does not contain relevant information\n\n"
+        "Context from university regulations:\n"
+        "---\n"
+        "{context}\n"
+        "---"
+    )
+
+    def __init__(self, rag_clients: "RAGClients"):
         self.clients = rag_clients
-        self.prompt_template = ChatPromptTemplate.from_messages([
+
+    def _build_messages(
+        self, 
+        query: str, 
+        context: str, 
+        history: Optional[List[ChatMessage]] = None
+    ) -> List[ChatMessage]:
+        """Build messages list with system prompt, history, and current query."""
+        messages = [
             ChatMessage(
-                content="You are a helpful assistant for Eastern Mediterranean University regulations.\n"
-                        "Your task is to answer questions based on the university regulation documents provided below.\n\n"
-                        "Guidelines:\n"
-                        "- Carefully read through all provided context sections\n"
-                        "- Answer the question in the same language as the question\n"
-                        "- If the context contains relevant information, provide a clear and comprehensive answer\n"
-                        "- Quote specific articles, rules, or sections when applicable\n"
-                        "- Only say 'I don't know' if the context truly does not contain relevant information\n\n"
-                        "Context from university regulations:\n"
-                        "---\n"
-                        "{context_str}\n"
-                        "---\n",
-                role=MessageRole.SYSTEM),
-            ChatMessage(
-                content="{query_str}",
-                role=MessageRole.USER),
-            ])
-    def format_prompt(self, query: str, context: str, top_k: int = 5) -> str:
-        return self.prompt_template.format_messages(query_str=query, context_str=context)
+                content=self.SYSTEM_PROMPT.format(context=context),
+                role=MessageRole.SYSTEM
+            )
+        ]
+        if history:
+            messages.extend(history)
+        messages.append(ChatMessage(content=query, role=MessageRole.USER))
+        return messages
 
     def retrieve_context(self, query: str, top_k: int = 5) -> RetrievalResult:
         retriever = self.clients.qdrant.get_retriever(top_k=top_k)
@@ -80,22 +96,36 @@ class RAGService:
             return ' '.join(word.capitalize() for word in text_parts)
         return name
     
-    async def generate_response(self, query: str, top_k: int = 5) -> RAGResponse:
+    async def generate_response(
+        self, 
+        query: str, 
+        session_id: uuid.UUID,
+        user: Optional["User"] = None,
+        db: Optional["AsyncSession"] = None,
+        top_k: int = 5
+    ) -> RAGResponse:
+        chat_history = self.clients.chat_history
+        
+        history = await chat_history.get_messages(session_id, user)
         retrieval_result = self.retrieve_context(query, top_k)
+        messages = self._build_messages(query, retrieval_result.context, history)
 
-        prompt = self.format_prompt(query, context=retrieval_result.context)
         llm = self.clients.llm.get_llm()
-        # TODO: streaming support after frontend is ready
-        response = await llm.achat(prompt)
-
+        response = await llm.achat(messages)
         answer = str(response.message.content)
-        has_answer = "don't know" not in answer.lower()
+        
+        await chat_history.add_message(session_id, ChatMessage(content=query, role=MessageRole.USER), user)
+        await chat_history.add_message(session_id, ChatMessage(content=answer, role=MessageRole.ASSISTANT), user)
+        
+        if user and db:
+            await chat_history.sync_to_postgres(session_id, user, db, title=query[:100])
 
         return RAGResponse(
             answer=answer,
-            has_answer=has_answer,
+            has_answer="don't know" not in answer.lower(),
             query=query,
-            sources=retrieval_result.sources
+            sources=retrieval_result.sources,
+            session_id=session_id
         )
        
 

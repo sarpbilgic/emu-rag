@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
+import uuid
 
 class SourceDocument(BaseModel):
     rank: int
@@ -16,3 +17,4 @@ class RAGResponse(BaseModel):
     sources: List[SourceDocument]
     query: str
     has_answer: bool = True
+    session_id: uuid.UUID
