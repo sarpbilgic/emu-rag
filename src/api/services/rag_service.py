@@ -34,7 +34,6 @@ class RAGService:
         context: str, 
         history: Optional[List[ChatMessage]] = None
     ) -> List[ChatMessage]:
-        """Build messages list with system prompt, history, and current query."""
         messages = [
             ChatMessage(
                 content=self.SYSTEM_PROMPT.format(context=context),
@@ -46,9 +45,9 @@ class RAGService:
         messages.append(ChatMessage(content=query, role=MessageRole.USER))
         return messages
 
-    def retrieve_context(self, query: str, top_k: int = 5) -> RetrievalResult:
+    async def retrieve_context(self, query: str, top_k: int = 5) -> RetrievalResult:
         retriever = self.clients.qdrant.get_retriever(top_k=top_k)
-        nodes = retriever.retrieve(query)
+        nodes = await retriever.aretrieve(query)
         context = []
         sources = []
         for i, node in enumerate(nodes, 1):
@@ -107,7 +106,7 @@ class RAGService:
         chat_history = self.clients.chat_history
         
         history = await chat_history.get_messages(session_id, user)
-        retrieval_result = self.retrieve_context(query, top_k)
+        retrieval_result = await self.retrieve_context(query, top_k)
         messages = self._build_messages(query, retrieval_result.context, history)
 
         llm = self.clients.llm.get_llm()

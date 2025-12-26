@@ -7,7 +7,7 @@ app = FastAPI(
     title="EMU RAG API",
     description="API for the Eastern Mediterranean University RAG system",
     version="0.1.0",
-    root_path="/api/v1",
+    #root_path="/api/v1",
 )
 
 @app.get("/")
