@@ -1,4 +1,4 @@
-from qdrant_client import QdrantClient
+from qdrant_client import AsyncQdrantClient
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import Document
@@ -9,19 +9,19 @@ import logging
 
 class QdrantClientManager:
     def __init__(self, collection_name: str = "emu_regulations"):
-        self.client = QdrantClient(
+        self.client = AsyncQdrantClient(
             url=settings.qdrant_url, 
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
 
-    def clear_collection(self) -> bool:
+    async def clear_collection(self) -> bool:
         try:
-            collections = self.client.get_collections().collections
+            collections = await self.client.get_collections().collections
             exists = any(c.name == self.collection_name for c in collections)
             
             if exists:
-                self.client.delete_collection(self.collection_name)
+                await self.client.delete_collection(self.collection_name)
                 logging.info(f"[OK] Deleted collection: {self.collection_name}")
             else:
                 logging.info(f"Collection '{self.collection_name}' does not exist yet")
@@ -33,7 +33,7 @@ class QdrantClientManager:
 
     def get_vector_store(self) -> QdrantVectorStore:
         return QdrantVectorStore(
-            client=self.client, 
+            aclient=self.client, 
             collection_name=self.collection_name,
         )
 

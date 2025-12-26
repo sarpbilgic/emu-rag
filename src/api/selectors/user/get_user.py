@@ -6,8 +6,10 @@ from typing import Optional
 
 async def get_user_by_email(email: str, db: AsyncSession) -> Optional[User]:
     email = email.lower()
-    return await db.exec(select(User).where(User.email == email)).first()
+    result = await db.exec(select(User).where(User.email == email))
+    return result.first()
 
 async def get_user_by_id(id: int, db: AsyncSession) -> Optional[User]:
-    return await db.exec(select(User).where(User.id == id)).first()
+    result = await db.exec(select(User).where(User.id == id))
+    return result.first()
 
