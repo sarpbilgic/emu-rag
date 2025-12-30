@@ -8,7 +8,7 @@ from src.api.services.chat_history_service import ChatHistoryService
 from functools import lru_cache
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import AsyncGenerator
-
+import redis.asyncio as redis
 
 @lru_cache()
 def get_llm_client() -> LLMClient:
@@ -26,6 +26,10 @@ def get_qdrant_client() -> QdrantClientManager:
 def get_redis_client() -> RedisClient:
     return RedisClient()
 
+@lru_cache()
+def get_redis() -> redis.Redis:
+    return get_redis_client().get_redis()
+    
 @lru_cache()
 def get_chat_history_service() -> ChatHistoryService:
     return ChatHistoryService(get_redis_client())

@@ -10,6 +10,7 @@ from src.api.dependencies.clients import get_db
 from src.api.services.auth_service import AuthService
 from src.api.selectors.user.get_or_create_user import get_or_create_user
 from src.api.dependencies.auth import get_auth_service
+from src.api.dependencies.rate_limit import login_rate_limiter
 
 logger = logging.getLogger(__name__)
 
@@ -27,21 +28,18 @@ microsoft_sso = MicrosoftSSO(
     scope=["openid", "email", "profile"]
 )
 
-
-@router.get("/microsoft/login")
+@router.get("/microsoft/login", dependencies=[Depends(login_rate_limiter)])
 async def microsoft_login():
-    """Initiate Microsoft OAuth login flow."""
     async with microsoft_sso:
         return await microsoft_sso.get_login_redirect()
 
 
-@router.get("/microsoft/callback")
+@router.get("/microsoft/callback", dependencies=[Depends(login_rate_limiter)])
 async def microsoft_callback(
     request: Request,
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ):
-    """Handle Microsoft OAuth callback."""
     try:
         async with microsoft_sso:
             user_data = await microsoft_sso.verify_and_process(request)

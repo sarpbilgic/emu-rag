@@ -2,12 +2,22 @@ from fastapi import FastAPI
 import uvicorn
 from src.api.routers.rag import router as rag_router
 from src.api.routers.auth import router as auth_router
+from src.api.dependencies.clients import get_redis_client, get_redis
+from fastapi_limiter import FastAPILimiter
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    redis_instance = get_redis()
+    await FastAPILimiter.init(redis_instance)
+    yield
 
 app = FastAPI(
     title="EMU RAG API",
     description="API for the Eastern Mediterranean University RAG system",
     version="0.1.0",
     #root_path="/api/v1",
+    lifespan=lifespan
 )
 
 @app.get("/")
