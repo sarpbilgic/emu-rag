@@ -3,6 +3,7 @@ from functools import lru_cache, cached_property
 from typing import Optional
 
 class Settings(BaseSettings):
+    env : str
     qdrant_url: str
     qdrant_api_key: str
     xai_api_key: str

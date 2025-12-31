@@ -6,7 +6,7 @@ from src.api.dependencies.clients import get_rag_service, get_db
 from src.api.schemas.rag import RAGResponse
 from src.api.dependencies.auth import get_current_user_optional
 from src.api.models.user import User
-from src.api.dependencies.rate_limit import rag_rate_limiter
+from src.api.dependencies.rate_limit import anonymous_rag_rate_limiter, authenticated_rag_rate_limiter
 
 if TYPE_CHECKING:
     from src.api.services.rag_service import RAGService
@@ -20,8 +20,9 @@ router = APIRouter(
     "/ask",
      response_model=RAGResponse,
      dependencies=[
-        Depends(rag_rate_limiter)
-     ]
+        Depends(authenticated_rag_rate_limiter),
+        Depends(anonymous_rag_rate_limiter),
+    ]
 )
 async def ask(
     request: Request,

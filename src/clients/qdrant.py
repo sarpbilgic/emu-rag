@@ -14,10 +14,11 @@ class QdrantClientManager:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
+        self._vector_store: Optional[QdrantVectorStore] = None
 
     async def clear_collection(self) -> bool:
         try:
-            collections = await self.client.get_collections().collections
+            collections = (await self.client.get_collections()).collections
             exists = any(c.name == self.collection_name for c in collections)
             
             if exists:
@@ -26,16 +27,21 @@ class QdrantClientManager:
             else:
                 logging.info(f"Collection '{self.collection_name}' does not exist yet")
             
+            self._vector_store = None
+            
             return True
         except Exception as e:
             logging.error(f"[ERROR] Failed to clear collection: {e}")
             return False
 
     def get_vector_store(self) -> QdrantVectorStore:
-        return QdrantVectorStore(
-            aclient=self.client, 
-            collection_name=self.collection_name,
-        )
+        if self._vector_store is None:
+            self._vector_store = QdrantVectorStore(
+                aclient=self.client, 
+                collection_name=self.collection_name,
+                enable_hybrid=False,  
+            )
+        return self._vector_store
 
     def get_storage_context(self) -> StorageContext:
         vector_store = self.get_vector_store()
@@ -62,5 +68,8 @@ class QdrantClientManager:
             self.get_vector_store(),
             storage_context=storage_context
         )
-        return index.as_retriever(similarity_top_k=top_k)
+        return index.as_retriever(
+            similarity_top_k=top_k,
+            vector_store_query_mode="default",  
+        )
    

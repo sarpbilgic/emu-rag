@@ -3,6 +3,7 @@ from typing import Optional
 from src.api.models.user import User
 from src.api.dependencies.auth import get_auth_service
 from fastapi_limiter.depends import RateLimiter
+from src.core.settings import settings
 
 async def user_id_identifier(request: Request) -> str:
     authorization = request.headers.get("Authorization")
@@ -25,8 +26,14 @@ async def ip_identifier(request: Request) -> str:
         return f"ip:{forwarded_for.split(',')[0].strip()}"
     return f"ip:{request.client.host if request.client else 'unknown'}"
 
-rag_rate_limiter = RateLimiter(
-    times=7,  
+anonymous_rag_rate_limiter = RateLimiter(
+    times=7 if settings.env == "production" else 100,  
+    seconds=3600,  
+    identifier=ip_identifier
+)
+
+authenticated_rag_rate_limiter = RateLimiter(
+    times=15 if settings.env == "production" else 100,  
     seconds=3600,  
     identifier=user_id_identifier
 )

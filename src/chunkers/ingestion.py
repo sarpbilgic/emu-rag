@@ -6,6 +6,7 @@ import re
 import time
 from pathlib import Path
 from typing import List, Dict
+import asyncio
 
 from tenacity import (
     retry,
@@ -267,7 +268,7 @@ class EMUMarkdownProcessor:
         before_sleep=before_sleep_log(logger, logging.WARNING),
         after=after_log(logger, logging.INFO)
     )
-    def _process_batch_with_retry(
+    async def _process_batch_with_retry(
         self, 
         pipeline: IngestionPipeline, 
         batch: List[Document],
@@ -280,12 +281,12 @@ class EMUMarkdownProcessor:
         logging.info(f"Documents: {[doc.metadata['source'] for doc in batch]}")
         logging.info(f"{'='*60}")
         
-        nodes = pipeline.run(documents=batch, show_progress=True)
+        nodes = await pipeline.arun(documents=batch, show_progress=True)
         logging.info(f"Batch {batch_num} completed: {len(nodes)} nodes created")
         
         return nodes
     
-    def ingest_documents(self, documents: List[Document], batch_size: int = 5) -> List[BaseNode]:
+    async def ingest_documents(self, documents: List[Document], batch_size: int = 5) -> List[BaseNode]:
         """Ingest documents into Qdrant using the pipeline in batches."""
         qdrant_manager = get_qdrant_client()
         
@@ -304,7 +305,7 @@ class EMUMarkdownProcessor:
             batch_num = (batch_idx // batch_size) + 1
             
             try:
-                nodes = self._process_batch_with_retry(
+                nodes = await self._process_batch_with_retry(
                     pipeline=pipeline,
                     batch=batch,
                     batch_num=batch_num,
@@ -313,7 +314,7 @@ class EMUMarkdownProcessor:
                 all_nodes.extend(nodes)
                 
                 if batch_idx + batch_size < len(documents):
-                    time.sleep(1)
+                    await asyncio.sleep(1)
                     
             except Exception as e:
                 print(f"\n✗ Batch {batch_num} failed: {e}")
@@ -323,7 +324,7 @@ class EMUMarkdownProcessor:
         return all_nodes
 
 
-def main():
+async def main():
     """Main ingestion script."""
     logging.basicConfig(level=logging.INFO)
     logging.info("=" * 60)
@@ -348,11 +349,11 @@ def main():
     # Clear existing collection
     logging.info("\nClearing existing collection...")
     qdrant = get_qdrant_client()
-    qdrant.clear_collection()
+    await qdrant.clear_collection()
     
     # Run ingestion
     try:
-        nodes = processor.ingest_documents(documents, batch_size=9)
+        nodes = await processor.ingest_documents(documents, batch_size=5)
         
         logging.info("\n[OK] INGESTION COMPLETE")
         logging.info(f"Documents processed: {len(documents)}")
@@ -374,4 +375,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
