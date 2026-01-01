@@ -22,4 +22,4 @@ llama-index-storage-chat-store-redis
 qdrant-client
 tenacity
 llama-index-embeddings-fastembed
-fastembed == 0.5.10
+fastembed == 0.5.1
