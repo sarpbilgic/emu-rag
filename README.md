@@ -2,7 +2,7 @@
 title: Emu Rag Assistant
 emoji: 🎓
 colorFrom: blue
-colorTo: orange
+colorTo: gray
 sdk: docker
 pinned: false
 app_port: 7860
