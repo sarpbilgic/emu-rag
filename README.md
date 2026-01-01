@@ -5,6 +5,7 @@ colorFrom: blue
 colorTo: gray
 sdk: docker
 pinned: false
+app_file: Dockerfile.hf
 app_port: 7860
 ---
 
