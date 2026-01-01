@@ -19,4 +19,4 @@ COPY . .
 
 EXPOSE 7860
 
-CMD sh -c "python -m src.chunkers.ingestion && uvicorn src.api.main:app --host 0.0.0.0 --port 7860"
+CMD sh -c "uvicorn src.api.main:app --host 0.0.0.0 --port 7860 --proxy-headers --forwarded-allow-ips='*'"

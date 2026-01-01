@@ -5,6 +5,12 @@ from src.api.dependencies.auth import get_auth_service
 from fastapi_limiter.depends import RateLimiter
 from src.core.settings import settings
 
+
+async def get_real_ip(request: Request) -> str:
+    if request.client:
+        return request.client.host
+    return "unknown"
+
 async def user_id_identifier(request: Request) -> str:
     authorization = request.headers.get("Authorization")
     if authorization and authorization.startswith("Bearer "):
@@ -15,16 +21,12 @@ async def user_id_identifier(request: Request) -> str:
             user_email = payload.get("sub")
             if user_email:
                 return f"user:{user_email}"
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return f"ip:{forwarded_for.split(',')[0].strip()}"
-    return f"ip:{request.client.host if request.client else 'unknown'}"
+    ip = await get_real_ip(request)
+    return f"ip:{ip}"
 
 async def ip_identifier(request: Request) -> str:
-    forwarded_for = request.headers.get("X-Forwarded-For")
-    if forwarded_for:
-        return f"ip:{forwarded_for.split(',')[0].strip()}"
-    return f"ip:{request.client.host if request.client else 'unknown'}"
+    ip = await get_real_ip(request)
+    return f"ip:{ip}"
 
 anonymous_rag_rate_limiter = RateLimiter(
     times=7 if settings.env == "production" else 100,  
