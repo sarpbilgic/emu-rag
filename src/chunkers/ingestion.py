@@ -353,7 +353,7 @@ async def main():
     
     # Run ingestion
     try:
-        nodes = await processor.ingest_documents(documents, batch_size=9)
+        nodes = await processor.ingest_documents(documents, batch_size=3)
         
         logging.info("\n[OK] INGESTION COMPLETE")
         logging.info(f"Documents processed: {len(documents)}")
