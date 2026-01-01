@@ -3,6 +3,7 @@ from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import Document
 from qdrant_client.http.models import Distance
+from fastembed import SparseTextEmbedding
 from typing import Optional, List
 from src.core.settings import settings
 import logging
@@ -14,7 +15,10 @@ class QdrantClientManager:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
-        self._vector_store: Optional[QdrantVectorStore] = None
+        self._sparse_model = SparseTextEmbedding(
+            model_name="prithivida/Splade_PP_en_v1",
+            cache_dir="./model_cache",
+        )
 
     async def clear_collection(self) -> bool:
         try:
@@ -27,21 +31,18 @@ class QdrantClientManager:
             else:
                 logging.info(f"Collection '{self.collection_name}' does not exist yet")
             
-            self._vector_store = None
-            
             return True
         except Exception as e:
             logging.error(f"[ERROR] Failed to clear collection: {e}")
             return False
 
     def get_vector_store(self) -> QdrantVectorStore:
-        if self._vector_store is None:
-            self._vector_store = QdrantVectorStore(
-                aclient=self.client, 
-                collection_name=self.collection_name,
-                enable_hybrid=False,  
-            )
-        return self._vector_store
+        return QdrantVectorStore(
+            aclient=self.client, 
+            collection_name=self.collection_name,
+            enable_hybrid = True,
+            fastembed_sparse_model=self._sparse_model,
+        )
 
     def get_storage_context(self) -> StorageContext:
         vector_store = self.get_vector_store()
@@ -70,6 +71,7 @@ class QdrantClientManager:
         )
         return index.as_retriever(
             similarity_top_k=top_k,
-            vector_store_query_mode="default",  
+            vector_store_query_mode="hybrid",
+            alpha=0.7,
         )
    
