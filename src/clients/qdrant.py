@@ -64,6 +64,6 @@ class QdrantClientManager:
         )
         return index.as_retriever(
             similarity_top_k=top_k,
-            vector_store_query_mode="hybrid",
+            vector_store_query_mode="default",
         )
    
