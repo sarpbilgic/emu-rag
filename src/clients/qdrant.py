@@ -2,8 +2,6 @@ from qdrant_client import AsyncQdrantClient
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import Document
-from qdrant_client.http.models import Distance
-from fastembed import SparseTextEmbedding
 from typing import Optional, List
 from src.core.settings import settings
 import logging
@@ -15,10 +13,6 @@ class QdrantClientManager:
             api_key=settings.qdrant_api_key
         )
         self.collection_name = collection_name
-        self._sparse_model = SparseTextEmbedding(
-            model_name="prithivida/Splade_PP_en_v1",
-            cache_dir="./model_cache",
-        )
 
     async def clear_collection(self) -> bool:
         try:
@@ -40,8 +34,7 @@ class QdrantClientManager:
         return QdrantVectorStore(
             aclient=self.client, 
             collection_name=self.collection_name,
-            enable_hybrid = True,
-            fastembed_sparse_model=self._sparse_model,
+            enable_hybrid = False
         )
 
     def get_storage_context(self) -> StorageContext:
@@ -72,6 +65,5 @@ class QdrantClientManager:
         return index.as_retriever(
             similarity_top_k=top_k,
             vector_store_query_mode="hybrid",
-            alpha=0.7,
         )
    
