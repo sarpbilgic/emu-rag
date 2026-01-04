@@ -28,8 +28,8 @@ def _llama_role_to_chat_role(role: MessageRole) -> ChatMessageRole:
 async def list_sessions(
     user: Annotated[User, Depends(get_current_user_required)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    limit: Annotated[int, Query(default=20, le=100)] = 20,
-    offset: Annotated[int, Query(default=0)] = 0
+    limit: Annotated[int, Query(le=100)] = 20,
+    offset: int = 0
 ):
     return await get_chat_sessions(
         user_id=user.id, 
