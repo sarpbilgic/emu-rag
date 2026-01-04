@@ -4,9 +4,10 @@ from llama_index.core.llms import ChatMessage, MessageRole
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.api.models.user import User
 from src.api.models.chat import ChatSession
-from src.api.selectors.chat.get_session import get_chat_session
+from src.api.selectors.chat.get_session import get_chat_session_by_id
 from src.api.selectors.chat.create_session import create_sessions
 from src.api.selectors.chat.save_messages import save_messages_to_db
+from src.api.selectors.chat.get_messages import get_chat_messages_by_session
 import uuid
 import logging
 from src.core.settings import settings
@@ -28,11 +29,30 @@ class ChatHistoryService:
     async def get_messages(
         self,
         session_id: uuid.UUID,
-        user: Optional[User]
+        user: Optional[User],
+        db: Optional[AsyncSession] = None
     ) -> List[ChatMessage]:
         try:
             key = self._get_redis_key(session_id, user)
-            return await self.redis_store.aget_messages(key)
+            messages = await self.redis_store.aget_messages(key)
+            if messages:
+                return messages
+            if db:
+                session = await get_chat_session_by_id(session_id, user.id if user else None, db)
+                if not session:
+                    return []
+                db_messages = await get_chat_messages_by_session(session_id, db)
+                if db_messages:
+                    llama_messages = [
+                        ChatMessage(
+                            role=message.role, 
+                            content=message.content) 
+                            for message in db_messages
+                        ]
+                    await self.redis_store.aset_messages(key, llama_messages)
+                    return llama_messages
+
+            return []
         except Exception as e:
             logger.warning(f"Failed to get messages from Redis: {e}. Returning empty list.")
             return []
@@ -45,7 +65,7 @@ class ChatHistoryService:
     ) -> None:
         try:
             key = self._get_redis_key(session_id, user)
-            await self.redis_store.async_add_message(key, message)
+            await self.redis_store.aadd_message(key, message)
         except Exception as e:
             logger.warning(f"Failed to add message to Redis: {e}. Message not stored.")
 
@@ -73,6 +93,8 @@ class ChatHistoryService:
             logger.warning(f"Failed to delete session from Redis: {e}.")
             return None
 
+
+
     async def sync_to_postgres(
         self,
         session_id: uuid.UUID,
@@ -80,12 +102,12 @@ class ChatHistoryService:
         db: AsyncSession,
         title: Optional[str] = None
     ) -> Optional[ChatSession]:
-        messages = await self.get_messages(session_id, user)
+        messages = await self.get_messages(session_id, user, db)
         
         if not messages:
             return None
         
-        db_session = await get_chat_session(session_id, user.id, db)
+        db_session = await get_chat_session_by_id(session_id, user.id, db)
         
         if not db_session:
             if not title:
@@ -99,16 +121,15 @@ class ChatHistoryService:
             db_session = await create_sessions(
                 user_id=user.id,
                 title=title,
-                db=db
+                db=db,
+                session_id=session_id  
             )
-            db_session.id = session_id
-            await db.commit()
-            await db.refresh(db_session)
         
         await save_messages_to_db(
             session=db_session,
             messages=messages,
-            db=db
+            db=db,
+            replace_existing=True  
         )
         
         return db_session
