@@ -8,7 +8,6 @@ router = APIRouter(
     prefix="/api/v1/user",
     tags=["User"],
 )
-
 @router.get("/me", response_model=UserRead)
 async def get_me(
     user: Annotated[User, Depends(get_current_user_required)],
