@@ -3,8 +3,7 @@ from sqlmodel import select, delete
 from src.api.models.chat import ChatSession, ChatMessage, ChatMessageRole
 from llama_index.core.llms import ChatMessage as LlamaChatMessage, MessageRole
 from typing import List
-from datetime import datetime
-from pytz import timezone
+from datetime import datetime, timezone
 
 def llama_to_db_role(llama_role: MessageRole) -> ChatMessageRole:
     mapping = {
@@ -32,7 +31,6 @@ async def save_messages_to_db(
         db_message = ChatMessage(
             content=str(msg.content),
             role=llama_to_db_role(msg.role),
-            timestamp=now,
             session_id=session.id,
         )
         db_messages.append(db_message)
