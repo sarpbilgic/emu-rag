@@ -95,14 +95,25 @@ async def microsoft_callback(
             
             access_token = auth_service.create_access_token(data={"sub": user.email})
             
-            return {
+            response = JSONResponse(content={
                 "access_token": access_token,
                 "token_type": "bearer",
                 "user": {
                     "email": user.email,
                     "username": user.username,
                 }
-            }
+            })
+
+            response.set_cookie(
+                key="access_token",
+                value=access_token,
+                httponly=True,
+                secure=True,
+                samesite="lax",
+                max_age=settings.access_token_expire_minutes * 60
+            )
+
+            return response
             
     except HTTPException:
         raise
