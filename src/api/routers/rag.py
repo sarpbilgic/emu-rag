@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 router = APIRouter(
     prefix="/api/v1/rag",
-    tags=["RAG"],
+    tags=["rag"],
 )
 
 @router.post(

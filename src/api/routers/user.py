@@ -6,7 +6,7 @@ from typing import Annotated
 
 router = APIRouter(
     prefix="/api/v1/user",
-    tags=["User"],
+    tags=["user"],
 )
 @router.get("/me", response_model=UserRead)
 async def get_me(

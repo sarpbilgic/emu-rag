@@ -1,126 +1,120 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi_sso.sso.microsoft import MicrosoftSSO
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import Annotated
 from sqlmodel.ext.asyncio.session import AsyncSession
-import logging
-import jwt
-from typing import Annotated, Optional
 
-from src.core.settings import settings
 from src.api.dependencies.clients import get_db
+from src.api.dependencies.auth import get_auth_service, oauth2_scheme, get_current_user_required
+from src.api.dependencies.clients import get_redis_client
 from src.api.services.auth_service import AuthService
-from src.api.selectors.user.get_or_create_user import get_or_create_user
-from src.api.dependencies.auth import get_auth_service
-from src.api.dependencies.rate_limit import login_rate_limiter
-from fastapi.responses import JSONResponse
+from src.api.selectors.user.get_user import get_user_by_email
+from src.api.selectors.user.add_user import add_user
+from src.api.models.user import User
+from src.api.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
+import redis.asyncio as redis
 
-logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api/v1/auth",
     tags=["auth"]
 )
 
-microsoft_sso = MicrosoftSSO(
-    client_id=settings.microsoft_client_id,
-    client_secret=settings.microsoft_client_secret,
-    tenant="common",
-    redirect_uri=settings.microsoft_redirect_uri,
-    allow_insecure_http=True,
-    scope=["openid", "email", "profile"]
-)
+@router.post("/register", response_model=TokenResponse)
+async def register(
+    request: RegisterRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    existing_user = await get_user_by_email(request.email, db)
+    if existing_user:
+        raise HTTPException(
+            status_code=400, 
+            detail="Email already registered"
+        )
+    user = User(
+        email=request.email.lower(),
+        username=request.username,
+        password_hash=auth_service.get_password_hash(request.password),
+        provider="local",
+    )
+    user = await add_user(user, db)
 
-@router.get("/microsoft/login", dependencies=[Depends(login_rate_limiter)])
-async def microsoft_login():
-    async with microsoft_sso:
-        return await microsoft_sso.get_login_redirect()
+    access_token = auth_service.create_access_token(data={"sub": user.email})
 
+    return TokenResponse(access_token=access_token)
+    
+@router.post("/login", response_model=TokenResponse)
+async def login(
+    request: LoginRequest,
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    user = await get_user_by_email(request.email, db)
 
-@router.get("/microsoft/callback", dependencies=[Depends(login_rate_limiter)])
-async def microsoft_callback(
-    request: Request,
+    if not user or not user.password_hash:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    if not auth_service.verify_password(request.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token = auth_service.create_access_token(data={"sub": user.email})
+    return TokenResponse(access_token=access_token)
+
+@router.post("/token", response_model=TokenResponse, include_in_schema=False)
+async def login_for_swagger(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ):
-    try:
-        async with microsoft_sso:
-            user_data = await microsoft_sso.verify_and_process(request)
-            
-            if not user_data:
-                logger.error("Microsoft SSO verification failed")
-                raise HTTPException(
-                    status_code=401, 
-                    detail="Authentication failed: Unable to verify Microsoft account"
-                )
-            
-            email: Optional[str] = None
-            user_id: Optional[str] = None
-            display_name: Optional[str] = None
-            first_name: Optional[str] = None
-            
-            id_token = getattr(microsoft_sso, '_id_token', None)
-            
-            if id_token:
-                try:
-                    decoded_token = jwt.decode(id_token, options={"verify_signature": False})
-                    email = auth_service.extract_email_from_token(decoded_token)
-                    user_info = auth_service.extract_user_info_from_token(decoded_token)
-                    user_id = user_info["user_id"]
-                    display_name = user_info["display_name"]
-                    first_name = user_info["first_name"]
-                except jwt.DecodeError as e:
-                    logger.warning(f"Failed to decode ID token: {e}")
-            
-            if not email:
-                user_info = auth_service.extract_user_info_from_sso_user_data(user_data)
-                email = user_info["email"]
-                user_id = user_info["user_id"]
-                display_name = user_info["display_name"]
-                first_name = user_info["first_name"]
-            
-            if not email:
-                logger.error("No email found in Microsoft SSO response")
-                raise HTTPException(
-                    status_code=400, 
-                    detail="Email not provided by Microsoft account"
-                )
-            
-            auth_service.validate_emu_email(email)
-            
-            user = await get_or_create_user(
-                email=email,
-                user_id=user_id,
-                display_name=display_name,
-                first_name=first_name,
-                db=db
-            )
-            
-            access_token = auth_service.create_access_token(data={"sub": user.email})
-            
-            response = JSONResponse(content={
-                "access_token": access_token,
-                "token_type": "bearer",
-                "user": {
-                    "email": user.email,
-                    "username": user.username,
-                }
-            })
+    user = await get_user_by_email(form_data.username, db)
 
-            response.set_cookie(
-                key="access_token",
-                value=access_token,
-                httponly=True,
-                secure=True,
-                samesite="lax",
-                max_age=settings.access_token_expire_minutes * 60
-            )
-
-            return response
-            
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.exception(f"Unexpected error during Microsoft OAuth callback: {e}")
+    if not user or not user.password_hash:
         raise HTTPException(
-            status_code=500,
-            detail="An internal error occurred during authentication. Please try again later."
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"}
         )
+
+    if user.is_active is False:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Inactive user",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if not auth_service.verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
+    
+    access_token = auth_service.create_access_token(data={"sub": user.email})
+    
+    return TokenResponse(access_token=access_token)
+    
+
+@router.post("/logout")
+async def logout(
+    user: Annotated[User, Depends(get_current_user_required)],
+    token: Annotated[str, Depends(oauth2_scheme)],
+    redis_client: Annotated[redis.Redis, Depends(get_redis_client)],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+):
+    payload = auth_service.decode_access_token(token)
+    if payload and "exp" in payload:
+        from datetime import datetime, timezone
+        exp = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
+        ttl = int((exp - datetime.now(timezone.utc)).total_seconds())
+        if ttl > 0:
+            await redis_client.setex(f"blacklist:{token}", ttl, "1")
+    
+    return {"message": "Successfully logged out"}

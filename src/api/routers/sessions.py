@@ -13,7 +13,7 @@ import uuid
 
 router = APIRouter(
     prefix="/api/v1",
-    tags=["Sessions"],
+    tags=["sessions"],
 )
 
 def _llama_role_to_chat_role(role: MessageRole) -> ChatMessageRole:

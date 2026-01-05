@@ -8,23 +8,28 @@ from src.api.models.user import User
 from src.api.dependencies.clients import get_db
 from src.api.selectors.user.get_user import get_user_by_email
 from typing import Optional, Annotated
-
+import redis.asyncio as redis
+from src.api.dependencies.clients import get_redis_client
 
 @lru_cache()
 def get_auth_service() -> AuthService:
     return AuthService()
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v1/auth/microsoft/callback", 
+    tokenUrl="/api/v1/auth/token", 
     auto_error=False
 )
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)], 
     db: Annotated[AsyncSession, Depends(get_db)],
-    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
+    redis_client: Annotated[redis.Redis, Depends(get_redis_client)]
 ) -> Optional[User]:
     if not token:
+        return None
+    is_blacklisted = await redis_client.get(f"blacklist:{token}")
+    if is_blacklisted:
         return None
     payload = auth_service.decode_access_token(token)
     if not payload:
