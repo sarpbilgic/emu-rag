@@ -3,7 +3,6 @@ from sqlmodel import select, delete
 from src.api.models.chat import ChatSession, ChatMessage, ChatMessageRole
 from llama_index.core.llms import ChatMessage as LlamaChatMessage, MessageRole
 from typing import List
-from datetime import datetime, timezone
 
 def llama_to_db_role(llama_role: MessageRole) -> ChatMessageRole:
     mapping = {
@@ -26,7 +25,6 @@ async def save_messages_to_db(
         await db.commit()
     
     db_messages = []
-    now = datetime.now(timezone.utc)
     for i, msg in enumerate(messages):
         db_message = ChatMessage(
             content=str(msg.content),

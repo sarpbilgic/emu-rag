@@ -33,6 +33,6 @@ class ChatMessage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     content: str = Field(sa_type=Text)
     role: ChatMessageRole = Field(index=True)
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=utc_now)
     session_id: uuid.UUID = Field(foreign_key="chat_sessions.id")
     session: ChatSession = Relationship(back_populates="messages")
