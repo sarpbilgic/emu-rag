@@ -11,6 +11,7 @@ from src.api.services.auth_service import AuthService
 from src.api.selectors.user.get_or_create_user import get_or_create_user
 from src.api.dependencies.auth import get_auth_service
 from src.api.dependencies.rate_limit import login_rate_limiter
+from fastapi.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
