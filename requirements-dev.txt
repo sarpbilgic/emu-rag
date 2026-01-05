@@ -23,6 +23,7 @@ llama-index-storage-chat-store-redis
 qdrant-client
 html2text
 pdfplumber
+python-multipart
 pymupdf4llm
 tenacity
 #llama-index-embeddings-huggingface

@@ -15,6 +15,7 @@ fastapi-limiter
 fastapi-sso
 python-jose
 passlib
+python-multipart
 llama-index
 llama-index-llms-openai
 llama-index-vector-stores-qdrant
