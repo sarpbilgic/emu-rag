@@ -65,7 +65,11 @@ class ChatHistoryService:
     ) -> None:
         try:
             key = self._get_redis_key(session_id, user)
-            await self.redis_store.aadd_message(key, message)
+            messages = await self.redis_store.aget_messages(key)
+            if messages is None:
+                messages = []
+            messages.append(message)
+            await self.redis_store.aset_messages(key, messages)
         except Exception as e:
             logger.warning(f"Failed to add message to Redis: {e}. Message not stored.")
 
