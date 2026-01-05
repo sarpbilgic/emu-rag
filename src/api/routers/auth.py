@@ -5,7 +5,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 from src.api.dependencies.clients import get_db
 from src.api.dependencies.auth import get_auth_service, oauth2_scheme, get_current_user_required
-from src.api.dependencies.clients import get_redis_client
+from src.api.dependencies.clients import get_redis
 from src.api.services.auth_service import AuthService
 from src.api.selectors.user.get_user import get_user_by_email
 from src.api.selectors.user.add_user import add_user
@@ -106,7 +106,7 @@ async def login_for_swagger(
 async def logout(
     user: Annotated[User, Depends(get_current_user_required)],
     token: Annotated[str, Depends(oauth2_scheme)],
-    redis_client: Annotated[redis.Redis, Depends(get_redis_client)],
+    redis_client: Annotated[redis.Redis, Depends(get_redis)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)]
 ):
     payload = auth_service.decode_access_token(token)
