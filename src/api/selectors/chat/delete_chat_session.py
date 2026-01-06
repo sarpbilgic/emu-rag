@@ -1,5 +1,5 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.api.models.chat import ChatSession
+from src.api.models.chat import ChatSession, ChatMessage
 from typing import Optional
 import uuid
 from sqlmodel import delete
