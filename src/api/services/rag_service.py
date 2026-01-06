@@ -16,7 +16,7 @@ class RAGService:
         "Guidelines:\n"
         "- Carefully read through all provided context sections\n"
         "- Answer the question in the same language as the question\n"
-        "- If the context contains relevant information, provide a clear and comprehensive answer\n"
+        "- If the context contains relevant information, provide a clear and explanatory answer\n"
         "- Quote specific articles, rules, or sections when applicable\n"
         "- Only say 'I don't know' if the context truly does not contain relevant information\n\n"
         "Context from university regulations:\n"
@@ -103,6 +103,7 @@ class RAGService:
         db: Optional["AsyncSession"] = None,
         top_k: int = 5
     ) -> RAGResponse:
+
         chat_history = self.clients.chat_history
         
         history = await chat_history.get_messages(session_id, user)
@@ -110,21 +111,34 @@ class RAGService:
         messages = self._build_messages(query, retrieval_result.context, history)
 
         llm = self.clients.llm.get_llm()
-        response = await llm.achat(messages)
-        answer = str(response.message.content)
-        
-        await chat_history.add_message(session_id, ChatMessage(content=query, role=MessageRole.USER), user)
-        await chat_history.add_message(session_id, ChatMessage(content=answer, role=MessageRole.ASSISTANT), user)
-        
+        stream = await llm.astream_chat(messages)
+        await chat_history.add_message(
+            session_id, 
+            ChatMessage(content=query, role=MessageRole.USER), 
+            user
+        )
+        full_answer = ""
+        async for chunk in stream:
+            token = chunk.delta
+            full_answer += token
+            yield {"type": "token", "content": token}
+
+        yield {
+            "type": "final_response",
+            "answer": full_answer,
+            "sources": [s.model_dump() for s in retrieval_result.sources], 
+            "query": query,
+            "session_id": str(session_id),
+            "has_answer": "don't know" not in full_answer.lower()
+        }
+
+        await chat_history.add_message(session_id, ChatMessage(content=full_answer, role=MessageRole.ASSISTANT), user)
+
         if user and db:
             await chat_history.sync_to_postgres(session_id, user, db, title=query[:100])
 
-        return RAGResponse(
-            answer=answer,
-            has_answer="don't know" not in answer.lower(),
-            query=query,
-            sources=retrieval_result.sources,
-            session_id=session_id
-        )
+
+
+
        
 
