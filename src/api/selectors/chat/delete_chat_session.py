@@ -9,9 +9,14 @@ async def delete_chat_session(
     user_id: int,
     db: AsyncSession
 ) -> None:
-    statement = delete(ChatSession).where(
+    message_statement = delete(ChatMessage).where(
+        ChatMessage.session_id == session_id
+    )
+    await db.execute(message_statement)
+
+    session_statement = delete(ChatSession).where(
         ChatSession.id == session_id,
         ChatSession.user_id == user_id 
     )
-    await db.execute(statement)
+    await db.execute(session_statement)
     await db.commit()
