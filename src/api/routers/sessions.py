@@ -58,4 +58,11 @@ async def get_messages(
         for msg in messages
     ]
 
-    
+@router.delete("/sessions/{session_id}")
+async def delete_session(
+    session_id: uuid.UUID,
+    chat_history_service: Annotated[ChatHistoryService, Depends(get_chat_history_service)],
+    user: Annotated[User, Depends(get_current_user_required)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    return await chat_history_service.delete_messages(session_id, user, db)

@@ -8,6 +8,7 @@ from src.api.selectors.chat.get_session import get_chat_session_by_id
 from src.api.selectors.chat.create_session import create_sessions
 from src.api.selectors.chat.save_messages import save_messages_to_db
 from src.api.selectors.chat.get_messages import get_chat_messages_by_session
+from src.api.selectors.chat.delete_chat_session import delete_chat_session
 import uuid
 import logging
 from src.core.settings import settings
@@ -88,16 +89,18 @@ class ChatHistoryService:
     async def delete_session(
         self,
         session_id: uuid.UUID,
-        user: Optional[User]
-    ) -> Optional[List[ChatMessage]]:
+        user: Optional[User],
+        db: Optional[AsyncSession] = None
+    ) -> bool:
         try:
             key = self._get_redis_key(session_id, user)
-            return await self.redis_store.adelete_messages(key)
+            await self.redis_store.adelete_messages(key)
+            if user and db:
+                await delete_chat_session(session_id, user.id, db)
+            return True
         except Exception as e:
-            logger.warning(f"Failed to delete session from Redis: {e}.")
-            return None
-
-
+            logger.warning(f"Failed to delete session: {e}.")
+            return False
 
     async def sync_to_postgres(
         self,
