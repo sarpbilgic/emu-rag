@@ -65,4 +65,4 @@ async def delete_session(
     user: Annotated[User, Depends(get_current_user_required)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    return await chat_history_service.delete_messages(session_id, user, db)
+    return await chat_history_service.delete_session(session_id, user, db)
