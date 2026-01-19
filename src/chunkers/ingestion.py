@@ -322,39 +322,53 @@ class EMUMarkdownProcessor:
 
 
 def main():
-    """Main ingestion script."""
+    """Main ingestion script with upsert logic - only processes new documents."""
     logging.basicConfig(level=logging.INFO)
     logging.info("=" * 60)
     logging.info("EMU RAG - Universal Markdown Ingestion Pipeline")
     logging.info("=" * 60)
     
     processor = EMUMarkdownProcessor()
-    documents = processor.load_markdown_files()
+    all_documents = processor.load_markdown_files()
     
-    if not documents:
+    if not all_documents:
         logging.error("[ERROR] No markdown files found in emu_rag_data/")
         return
     
-    # Show summary
-    logging.info("\nDocument Summary:")
+    # Check which documents are already indexed
+    qdrant = get_qdrant_client()
+    indexed_sources = qdrant.get_indexed_sources()
+    
+    logging.info(f"\nAlready indexed: {len(indexed_sources)} source files")
+    if indexed_sources:
+        for src in sorted(indexed_sources):
+            logging.info(f"  ✓ {src}")
+    
+    # Filter to only new documents
+    documents = [
+        doc for doc in all_documents 
+        if doc.metadata['source'] not in indexed_sources
+    ]
+    
+    if not documents:
+        logging.info("\n[OK] All documents already indexed. Nothing to do.")
+        return
+    
+    logging.info(f"\nNew documents to process: {len(documents)}")
     for doc in documents:
-        logging.info(f"  - {doc.metadata['source']}")
+        logging.info(f"  → {doc.metadata['source']}")
         logging.info(f"    Type: {doc.metadata.get('type', 'unknown')}")
         if 'document_title' in doc.metadata:
             logging.info(f"    Title: {doc.metadata['document_title'][:50]}...")
     
-    # Clear existing collection
-    logging.info("\nClearing existing collection...")
-    qdrant = get_qdrant_client()
-    qdrant.clear_collection_sync()
-    
-    # Run ingestion
+
     try:
         nodes = processor.ingest_documents(documents, batch_size=10)
         
         logging.info("\n[OK] INGESTION COMPLETE")
-        logging.info(f"Documents processed: {len(documents)}")
-        logging.info(f"Chunks created: {len(nodes)}")
+        logging.info(f"New documents processed: {len(documents)}")
+        logging.info(f"New chunks created: {len(nodes)}")
+        logging.info(f"Total indexed sources: {len(indexed_sources) + len(documents)}")
         
         # Show sample metadata
         if nodes:

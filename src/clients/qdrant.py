@@ -97,4 +97,37 @@ class QdrantClientManager:
             vector_store_query_mode=query_mode,
             alpha=alpha,
         )
-   
+
+    def get_indexed_sources(self) -> set:
+        try:
+            collections = self.sync_client.get_collections().collections
+            if not any(c.name == self.collection_name for c in collections):
+                return set()
+            
+            info = self.sync_client.get_collection(self.collection_name)
+            if info.points_count == 0:
+                return set()
+            
+            indexed_sources = set()
+            offset = None
+            
+            while True:
+                results, offset = self.sync_client.scroll(
+                    collection_name=self.collection_name,
+                    limit=100,
+                    offset=offset,
+                    with_payload=["source"],
+                )
+                
+                for point in results:
+                    if point.payload and "source" in point.payload:
+                        indexed_sources.add(point.payload["source"])
+                
+                if offset is None:
+                    break
+            
+            return indexed_sources
+            
+        except Exception as e:
+            logging.warning(f"Could not get indexed sources: {e}")
+            return set()
