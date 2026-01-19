@@ -30,4 +30,4 @@ tenacity
 #llama-index-embeddings-huggingface
 #transformers
 llama-index-embeddings-fastembed
-fastembed 
+fastembed

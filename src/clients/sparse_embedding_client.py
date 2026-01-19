@@ -3,7 +3,7 @@ from typing import List, Tuple
 import logging
 
 class SparseEmbeddingClient:  
-    def __init__(self, model_name: str = "Qdrant/SPLADE_PP_en_v1"):
+    def __init__(self, model_name: str = "prithivida/Splade_PP_en_v1"):
         logging.info(f"Initializing SPLADE sparse embeddings ({model_name})...")
         self.model = SparseTextEmbedding(
             model_name=model_name,
