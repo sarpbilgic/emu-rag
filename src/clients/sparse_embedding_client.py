@@ -11,9 +11,11 @@ class SparseEmbeddingClient:
         )
         logging.info("Sparse embedding model loaded successfully")
     
-    def embed_documents(self, documents: List[str]) -> List[Tuple[List[int], List[float]]]:
+    def embed_documents(self, documents: List[str]) -> Tuple[List[List[int]], List[List[float]]]:
         embeddings = list(self.model.embed(documents))
-        return [(emb.indices.tolist(), emb.values.tolist()) for emb in embeddings]
+        all_indices = [emb.indices.tolist() for emb in embeddings]
+        all_values = [emb.values.tolist() for emb in embeddings]
+        return (all_indices, all_values)
     
     def embed_query(self, query: str) -> Tuple[List[int], List[float]]:
         embedding = list(self.model.query_embed(query))[0]
