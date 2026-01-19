@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from src.api.routers.rag import router as rag_router
 from src.api.routers.auth_microsoft import router as auth_microsoft_router
@@ -8,6 +9,7 @@ from src.api.routers.sessions import router as session_router
 from src.api.dependencies.clients import get_redis_client, get_redis
 from fastapi_limiter import FastAPILimiter
 from contextlib import asynccontextmanager
+import logging
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
