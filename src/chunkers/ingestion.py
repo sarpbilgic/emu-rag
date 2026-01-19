@@ -6,7 +6,6 @@ import re
 import time
 from pathlib import Path
 from typing import List, Dict
-import asyncio
 
 from tenacity import (
     retry,
@@ -240,7 +239,7 @@ class EMUMarkdownProcessor:
         4. Embedding model - embeds chunks
         """
         qdrant_manager = get_qdrant_client()
-        vector_store = qdrant_manager.get_vector_store()
+        vector_store = qdrant_manager.get_vector_store(enable_hybrid=True)
         embed_model = get_embedding_client().get_embed_model()
         
         pipeline = IngestionPipeline(
@@ -268,7 +267,7 @@ class EMUMarkdownProcessor:
         before_sleep=before_sleep_log(logger, logging.WARNING),
         after=after_log(logger, logging.INFO)
     )
-    async def _process_batch_with_retry(
+    def _process_batch_with_retry(
         self, 
         pipeline: IngestionPipeline, 
         batch: List[Document],
@@ -281,16 +280,16 @@ class EMUMarkdownProcessor:
         logging.info(f"Documents: {[doc.metadata['source'] for doc in batch]}")
         logging.info(f"{'='*60}")
         
-        nodes = await pipeline.arun(documents=batch, show_progress=True)
+        nodes = pipeline.run(documents=batch, show_progress=True)
         logging.info(f"Batch {batch_num} completed: {len(nodes)} nodes created")
         
         return nodes
     
-    async def ingest_documents(self, documents: List[Document], batch_size: int = 5) -> List[BaseNode]:
+    def ingest_documents(self, documents: List[Document], batch_size: int = 10) -> List[BaseNode]:
         """Ingest documents into Qdrant using the pipeline in batches."""
         qdrant_manager = get_qdrant_client()
         
-        logging.info("\nStarting batched ingestion pipeline...")
+        logging.info("\nStarting ingestion pipeline...")
         logging.info(f"Target collection: {qdrant_manager.collection_name}")
         logging.info(f"Batch size: {batch_size} document(s) per batch")
         logging.info(f"Total documents: {len(documents)}")
@@ -305,16 +304,13 @@ class EMUMarkdownProcessor:
             batch_num = (batch_idx // batch_size) + 1
             
             try:
-                nodes = await self._process_batch_with_retry(
+                nodes = self._process_batch_with_retry(
                     pipeline=pipeline,
                     batch=batch,
                     batch_num=batch_num,
                     total_batches=total_batches
                 )
                 all_nodes.extend(nodes)
-                
-                if batch_idx + batch_size < len(documents):
-                    await asyncio.sleep(1)
                     
             except Exception as e:
                 print(f"\n✗ Batch {batch_num} failed: {e}")
@@ -324,7 +320,7 @@ class EMUMarkdownProcessor:
         return all_nodes
 
 
-async def main():
+def main():
     """Main ingestion script."""
     logging.basicConfig(level=logging.INFO)
     logging.info("=" * 60)
@@ -349,11 +345,11 @@ async def main():
     # Clear existing collection
     logging.info("\nClearing existing collection...")
     qdrant = get_qdrant_client()
-    await qdrant.clear_collection()
+    qdrant.clear_collection_sync()
     
     # Run ingestion
     try:
-        nodes = await processor.ingest_documents(documents, batch_size=3)
+        nodes = processor.ingest_documents(documents, batch_size=10)
         
         logging.info("\n[OK] INGESTION COMPLETE")
         logging.info(f"Documents processed: {len(documents)}")
@@ -375,4 +371,4 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

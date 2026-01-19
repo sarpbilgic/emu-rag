@@ -1,5 +1,6 @@
 from src.clients.llm import LLMClient
 from src.clients.embedding_client import EmbeddingClient
+from src.clients.sparse_embedding_client import SparseEmbeddingClient
 from src.clients.qdrant import QdrantClientManager
 from src.clients.redis import RedisClient
 from src.clients.postgres import async_session
@@ -9,6 +10,7 @@ from functools import lru_cache
 from sqlmodel.ext.asyncio.session import AsyncSession
 from typing import AsyncGenerator
 import redis.asyncio as redis
+from typing import List
 
 @lru_cache()
 def get_llm_client() -> LLMClient:
@@ -19,8 +21,19 @@ def get_embedding_client() -> EmbeddingClient:
     return EmbeddingClient()
 
 @lru_cache()
+def get_sparse_embedding_client() -> SparseEmbeddingClient:
+    return SparseEmbeddingClient()
+
+@lru_cache()
 def get_qdrant_client() -> QdrantClientManager:
-    return QdrantClientManager()
+    qdrant = QdrantClientManager()
+    sparse_client = get_sparse_embedding_client()
+
+    def sparse_embed_fn(texts: List[str]):
+        return sparse_client.embed_documents(texts)
+    
+    qdrant.set_sparse_embed_fn(sparse_embed_fn)
+    return qdrant
 
 @lru_cache()
 def get_redis_client() -> RedisClient:

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     microsoft_client_id: str
     microsoft_client_secret: str
     microsoft_tenant_id: str
+    tavily_api_key: str
     api_base_url: str
     anonymous_chat_ttl: int = 86400
     authenticated_chat_ttl: Optional[int] = None

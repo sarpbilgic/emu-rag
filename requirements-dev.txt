@@ -20,6 +20,7 @@ llama-index
 llama-index-llms-openai
 llama-index-vector-stores-qdrant
 llama-index-storage-chat-store-redis
+llama-index-tools-tavily-research
 qdrant-client
 html2text
 pdfplumber
@@ -29,4 +30,4 @@ tenacity
 #llama-index-embeddings-huggingface
 #transformers
 llama-index-embeddings-fastembed
-fastembed == 0.5.1
+fastembed 
