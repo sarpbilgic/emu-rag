@@ -55,14 +55,15 @@ class QdrantClientManager:
             logging.error(f"[ERROR] Failed to clear collection: {e}")
             return False
 
-    def get_vector_store(self, enable_hybrid: bool = True) -> QdrantVectorStore:
+    def get_vector_store(self, enable_hybrid: bool = True, use_async: bool = True) -> QdrantVectorStore:
+        client_arg = {"aclient": self.client} if use_async else {"client": self.sync_client}
         return QdrantVectorStore(
-            aclient=self.client, 
-            collection_name=self.collection_name,
-            enable_hybrid=enable_hybrid,
-            sparse_doc_fn=self._sparse_embed_fn if self._sparse_embed_fn else None,
-            sparse_query_fn=self._sparse_embed_fn if self._sparse_embed_fn else None,
-        )
+            **client_arg,
+                collection_name=self.collection_name,
+                enable_hybrid=enable_hybrid,
+                sparse_doc_fn=self._sparse_embed_fn if self._sparse_embed_fn else None,
+                sparse_query_fn=self._sparse_embed_fn if self._sparse_embed_fn else None,
+            )
 
     def get_storage_context(self) -> StorageContext:
         vector_store = self.get_vector_store()

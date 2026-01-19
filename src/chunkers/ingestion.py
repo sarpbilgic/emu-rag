@@ -239,7 +239,8 @@ class EMUMarkdownProcessor:
         4. Embedding model - embeds chunks
         """
         qdrant_manager = get_qdrant_client()
-        vector_store = qdrant_manager.get_vector_store(enable_hybrid=True)
+        # use_async=False for sync pipeline.run()
+        vector_store = qdrant_manager.get_vector_store(enable_hybrid=True, use_async=False)
         embed_model = get_embedding_client().get_embed_model()
         
         pipeline = IngestionPipeline(
