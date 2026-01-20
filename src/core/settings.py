@@ -21,8 +21,8 @@ class Settings(BaseSettings):
     authenticated_chat_ttl: Optional[int] = None
     reranker_enabled: bool = True
     reranker_model: str = "jinaai/jina-reranker-v2-base-multilingual"
-    reranker_top_k: int = 5  
-    retrieval_top_k: int = 15  
+    reranker_top_k: int = 4  
+    retrieval_top_k: int = 8  
 
     model_config = SettingsConfigDict(
         env_file=".env",

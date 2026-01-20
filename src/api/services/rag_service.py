@@ -33,7 +33,7 @@ class RAGService:
     def __init__(self, rag_clients: "RAGClients"):
         self.clients = rag_clients
 
-    async def retrieve_context(self, query: str, top_k: int = 5) -> RetrievalResult:
+    async def retrieve_context(self, query: str, top_k: int = settings.retrieval_top_k) -> RetrievalResult:
         fetch_k = settings.retrieval_top_k if self.clients.reranker.enabled else top_k
         
         retriever = self.clients.qdrant.get_retriever(top_k=fetch_k)
@@ -86,7 +86,7 @@ class RAGService:
         session_id: uuid.UUID,
         user: Optional["User"] = None,
         db: Optional["AsyncSession"] = None,
-        top_k: int = 5
+        top_k: int = settings.retrieval_top_k
     ):
         chat_history = self.clients.chat_history
         

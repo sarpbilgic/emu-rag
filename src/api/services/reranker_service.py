@@ -14,7 +14,7 @@ class RerankerService:
         self.client = client
         self.enabled = client is not None and settings.reranker_enabled
     
-    def rerank_texts(self, query: str, texts: list[str], top_k: int = 5) -> list[RerankResult]:
+    def rerank_texts(self, query: str, texts: list[str], top_k: int = settings.reranker_top_k) -> list[RerankResult]:
         if not self.enabled or not texts:
             return [RerankResult(text=t, score=1.0, index=i) for i, t in enumerate(texts[:top_k])]
         
@@ -28,7 +28,7 @@ class RerankerService:
         
         return sorted(scored, key=lambda x: x.score, reverse=True)[:top_k]
     
-    def rerank_items(self, query: str, items: list[T], key: callable, top_k: int = 5) -> list[T]:
+    def rerank_items(self, query: str, items: list[T], key: callable, top_k: int = settings.reranker_top_k) -> list[T]:
         if not self.enabled or not items:
             return items[:top_k]
         
