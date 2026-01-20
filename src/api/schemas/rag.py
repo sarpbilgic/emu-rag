@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
-from typing import List, Dict, Optional
+from typing import List, Optional
 import uuid
+
 
 class SourceDocument(BaseModel):
     rank: int
@@ -8,9 +9,17 @@ class SourceDocument(BaseModel):
     title: Optional[str] = None
     article: Optional[str] = None
 
+
+class RerankResult(BaseModel):
+    text: str
+    score: float
+    index: int  
+
+
 class RetrievalResult(BaseModel):
-    context: str = Field(..., description= "Clean text for LLM to use")
-    sources: List[SourceDocument] = Field(default_factory=list, description= "Source metadata for user")
+    context: str = Field(..., description="Clean text for LLM")
+    sources: List[SourceDocument] = Field(default_factory=list)
+
 
 class RAGResponse(BaseModel):
     answer: str

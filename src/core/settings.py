@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     api_base_url: str
     anonymous_chat_ttl: int = 86400
     authenticated_chat_ttl: Optional[int] = None
+    reranker_enabled: bool = True
+    reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    reranker_top_k: int = 5  
+    retrieval_top_k: int = 15  
 
     model_config = SettingsConfigDict(
         env_file=".env",

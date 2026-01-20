@@ -3,14 +3,16 @@ from src.clients.embedding_client import EmbeddingClient
 from src.clients.sparse_embedding_client import SparseEmbeddingClient
 from src.clients.qdrant import QdrantClientManager
 from src.clients.redis import RedisClient
+from src.clients.reranker_client import RerankerClient
 from src.clients.postgres import async_session
 from src.api.services.rag_service import RAGService
 from src.api.services.chat_history_service import ChatHistoryService
+from src.api.services.reranker_service import RerankerService
+from src.core.settings import settings
 from functools import lru_cache
 from sqlmodel.ext.asyncio.session import AsyncSession
-from typing import AsyncGenerator
+from typing import AsyncGenerator, List
 import redis.asyncio as redis
-from typing import List
 
 @lru_cache()
 def get_llm_client() -> LLMClient:
@@ -40,6 +42,17 @@ def get_redis_client() -> RedisClient:
     return RedisClient()
 
 @lru_cache()
+def get_reranker_client() -> RerankerClient | None:
+    """Get reranker client if enabled."""
+    if not settings.reranker_enabled:
+        return None
+    return RerankerClient(model_name=settings.reranker_model)
+
+@lru_cache()
+def get_reranker_service() -> RerankerService:
+    return RerankerService(get_reranker_client())
+
+@lru_cache()
 def get_redis() -> redis.Redis:
     return get_redis_client().get_redis()
     
@@ -54,6 +67,7 @@ class RAGClients:
         self.qdrant = get_qdrant_client()
         self.redis = get_redis_client()
         self.chat_history = get_chat_history_service()
+        self.reranker = get_reranker_service()
 
 @lru_cache()
 def get_rag_clients() -> RAGClients:

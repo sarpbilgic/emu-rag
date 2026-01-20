@@ -18,7 +18,7 @@ class CustomOpenAI(OpenAI):
 class LLMClient:
     def __init__(self):
         self.llm = CustomOpenAI(
-            model="grok-4-fast-non-reasoning",
+            model="grok-4-1-fast-reasoning",
             api_key=settings.xai_api_key,
             api_base="https://api.x.ai/v1",
             temperature=0.1,
