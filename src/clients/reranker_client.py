@@ -1,8 +1,13 @@
-from fastembed import TextCrossEncoder
 from typing import Optional
 import logging
 
 logger = logging.getLogger(__name__)
+
+# fastembed changed import paths across versions
+try:
+    from fastembed.rerank.cross_encoder import TextCrossEncoder
+except ImportError:
+    from fastembed import TextCrossEncoder
 
 
 class RerankerClient:
