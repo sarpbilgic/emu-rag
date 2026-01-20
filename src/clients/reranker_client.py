@@ -16,4 +16,4 @@ class RerankerClient:
         logger.info("Reranker ready")
     
     def rerank(self, query: str, documents: list[str]):
-        return self.model.rerank(query, documents)
+        return list(self.model.rerank(query, documents))

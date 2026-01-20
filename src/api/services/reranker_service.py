@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, TypeVar, Generic
+from typing import TYPE_CHECKING, TypeVar
 from src.api.schemas.rag import RerankResult
 from src.core.settings import settings
 
@@ -20,11 +20,13 @@ class RerankerService:
         
         results = list(self.client.rerank(query, texts))
         
-        return sorted(
-            [RerankResult(text=r.document, score=r.relevance_score, index=i) for i, r in enumerate(results)],
-            key=lambda x: x.score,
-            reverse=True
-        )[:top_k]
+        scored = []
+        for i, r in enumerate(results):
+            score = r.score if hasattr(r, 'score') else (r.relevance_score if hasattr(r, 'relevance_score') else float(r))
+            doc = r.document if hasattr(r, 'document') else texts[i]
+            scored.append(RerankResult(text=doc, score=score, index=i))
+        
+        return sorted(scored, key=lambda x: x.score, reverse=True)[:top_k]
     
     def rerank_items(self, query: str, items: list[T], key: callable, top_k: int = 5) -> list[T]:
         if not self.enabled or not items:
@@ -33,6 +35,12 @@ class RerankerService:
         texts = [key(item) for item in items]
         results = list(self.client.rerank(query, texts))
 
-        scored = sorted(enumerate(results), key=lambda x: x[1].relevance_score, reverse=True)
+        def get_score(r):
+            if hasattr(r, 'score'):
+                return r.score
+            if hasattr(r, 'relevance_score'):
+                return r.relevance_score
+            return float(r)
+        
+        scored = sorted(enumerate(results), key=lambda x: get_score(x[1]), reverse=True)
         return [items[i] for i, _ in scored[:top_k]]
-
