@@ -6,7 +6,7 @@ logger = logging.getLogger(__name__)
 
 
 class RerankerClient:
-    DEFAULT_MODEL = "BAAI/bge-reranker-v2-m3"
+    DEFAULT_MODEL = "jinaai/jina-reranker-v2-base-multilingual"
     
     def __init__(self, model_name: Optional[str] = None, cache_dir: str = "./model_cache"):
         self.model_name = model_name or self.DEFAULT_MODEL

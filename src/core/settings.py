@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     anonymous_chat_ttl: int = 86400
     authenticated_chat_ttl: Optional[int] = None
     reranker_enabled: bool = True
-    reranker_model: str = "BAAI/bge-reranker-v2-m3"
+    reranker_model: str = "jinaai/jina-reranker-v2-base-multilingual"
     reranker_top_k: int = 5  
     retrieval_top_k: int = 15  
 

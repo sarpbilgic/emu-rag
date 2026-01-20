@@ -16,7 +16,7 @@ TextEmbedding(model_name='intfloat/multilingual-e5-large', cache_dir='./model_ca
 SparseTextEmbedding(model_name='prithivida/Splade_PP_en_v1', cache_dir='./model_cache'); \
 "
 
-RUN python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder(model_name='BAAI/bge-reranker-v2-m3', cache_dir='./model_cache')"
+RUN python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder(model_name='jinaai/jina-reranker-v2-base-multilingual', cache_dir='./model_cache')"
 
 COPY . .
 
