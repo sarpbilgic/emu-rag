@@ -4,9 +4,9 @@ from src.api.models.user import User
 from src.api.dependencies.auth import get_auth_service
 from fastapi_limiter.depends import RateLimiter
 from src.core.settings import settings
+import asyncio
 
-
-async def get_real_ip(request: Request) -> str:
+def get_real_ip(request: Request) -> str:
     if request.client:
         return request.client.host
     return "unknown"
@@ -16,16 +16,16 @@ async def user_id_identifier(request: Request) -> str:
     if authorization and authorization.startswith("Bearer "):
         token = authorization.split(" ")[1]
         auth_service = get_auth_service()
-        payload = auth_service.decode_access_token(token)
+        payload = await asyncio.to_thread(auth_service.decode_access_token, token)
         if payload:
             user_email = payload.get("sub")
             if user_email:
                 return f"user:{user_email}"
-    ip = await get_real_ip(request)
+    ip = get_real_ip(request)
     return f"ip:{ip}"
 
 async def ip_identifier(request: Request) -> str:
-    ip = await get_real_ip(request)
+    ip = get_real_ip(request)
     return f"ip:{ip}"
 
 anonymous_rag_rate_limiter = RateLimiter(
