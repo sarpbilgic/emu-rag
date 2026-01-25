@@ -10,6 +10,7 @@ from src.api.schemas.session import ChatSessionList, ChatMessageRead
 from src.api.services.chat_history_service import ChatHistoryService
 from llama_index.core.llms import MessageRole
 import uuid
+from src.api.dependencies.rate_limit import general_rate_limiter
 
 router = APIRouter(
     prefix="/api/v1",
@@ -24,7 +25,7 @@ def _llama_role_to_chat_role(role: MessageRole) -> ChatMessageRole:
     }
     return mapping.get(role, ChatMessageRole.USER)
 
-@router.get("/sessions", response_model=List[ChatSessionList])
+@router.get("/sessions", response_model=List[ChatSessionList], dependencies=[Depends(general_rate_limiter)])
 async def list_sessions(
     user: Annotated[User, Depends(get_current_user_required)],
     db: Annotated[AsyncSession, Depends(get_db)],
@@ -38,7 +39,7 @@ async def list_sessions(
         offset=offset
     )
 
-@router.get("/sessions/{session_id}/messages", response_model=List[ChatMessageRead])
+@router.get("/sessions/{session_id}/messages", response_model=List[ChatMessageRead], dependencies=[Depends(general_rate_limiter)])
 async def get_messages(
     session_id: uuid.UUID,
     chat_history_service: Annotated[ChatHistoryService, Depends(get_chat_history_service)],
@@ -58,7 +59,7 @@ async def get_messages(
         for msg in messages
     ]
 
-@router.delete("/sessions/{session_id}")
+@router.delete("/sessions/{session_id}", dependencies=[Depends(general_rate_limiter)])
 async def delete_session(
     session_id: uuid.UUID,
     chat_history_service: Annotated[ChatHistoryService, Depends(get_chat_history_service)],

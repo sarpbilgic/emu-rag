@@ -12,6 +12,7 @@ from src.api.selectors.user.add_user import add_user
 from src.api.models.user import User
 from src.api.schemas.auth import RegisterRequest, LoginRequest, TokenResponse
 import redis.asyncio as redis
+from src.api.dependencies.rate_limit import login_rate_limiter
 
 
 router = APIRouter(
@@ -19,7 +20,7 @@ router = APIRouter(
     tags=["auth"]
 )
 
-@router.post("/register", response_model=TokenResponse)
+@router.post("/register", response_model=TokenResponse, dependencies=[Depends(login_rate_limiter)])
 async def register(
     request: RegisterRequest,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
@@ -43,7 +44,7 @@ async def register(
 
     return TokenResponse(access_token=access_token)
     
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, dependencies=[Depends(login_rate_limiter)])
 async def login(
     request: LoginRequest,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
@@ -68,7 +69,7 @@ async def login(
     access_token = auth_service.create_access_token(data={"sub": user.email})
     return TokenResponse(access_token=access_token)
 
-@router.post("/token", response_model=TokenResponse, include_in_schema=False)
+@router.post("/token", response_model=TokenResponse, include_in_schema=False, dependencies=[Depends(login_rate_limiter)])
 async def login_for_swagger(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: Annotated[AsyncSession, Depends(get_db)],

@@ -43,7 +43,6 @@ def get_redis_client() -> RedisClient:
 
 @lru_cache()
 def get_reranker_client() -> RerankerClient | None:
-    """Get reranker client if enabled."""
     if not settings.reranker_enabled:
         return None
     return RerankerClient(model_name=settings.reranker_model)

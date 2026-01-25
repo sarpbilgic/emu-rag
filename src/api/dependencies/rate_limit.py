@@ -29,19 +29,25 @@ async def ip_identifier(request: Request) -> str:
     return f"ip:{ip}"
 
 anonymous_rag_rate_limiter = RateLimiter(
-    times=7 if settings.env == "production" else 100,  
+    times=10 if settings.env == "production" else 100,  
     seconds=3600,  
     identifier=ip_identifier
 )
 
 authenticated_rag_rate_limiter = RateLimiter(
-    times=15 if settings.env == "production" else 100,  
+    times=25 if settings.env == "production" else 100,  
     seconds=3600,  
     identifier=user_id_identifier
 )
 
 login_rate_limiter = RateLimiter(
-    times=10,
+    times=25,
     seconds=300,
     identifier=ip_identifier
+)
+
+general_rate_limiter = RateLimiter(
+    times=100,
+    seconds=3600,
+    identifier=user_id_identifier
 )
