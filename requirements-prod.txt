@@ -24,4 +24,4 @@ llama-index-tools-tavily-research
 qdrant-client
 tenacity
 llama-index-embeddings-fastembed
-fastembed
+fastembed 

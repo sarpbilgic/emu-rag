@@ -10,3 +10,4 @@ venv/
 scripts/
 model_cache/
 emu_rag_data/*.pdf
+pdfs/

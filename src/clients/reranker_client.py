@@ -1,15 +1,13 @@
 from fastembed.rerank.cross_encoder import TextCrossEncoder
 from typing import Optional
 import logging
-
+from src.core.settings import settings
 logger = logging.getLogger(__name__)
 
 
 class RerankerClient:
-    DEFAULT_MODEL = "jinaai/jina-reranker-v2-base-multilingual"
-    
-    def __init__(self, model_name: Optional[str] = None, cache_dir: str = "./model_cache"):
-        self.model_name = model_name or self.DEFAULT_MODEL
+    def __init__(self, cache_dir: str = "./model_cache"):
+        self.model_name = settings.reranker_model
         logger.info(f"Loading reranker: {self.model_name}")
         
         self.model = TextCrossEncoder(model_name=self.model_name, cache_dir=cache_dir)
