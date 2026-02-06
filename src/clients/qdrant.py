@@ -19,6 +19,7 @@ class QdrantClientManager:
         )
         self.collection_name = collection_name
         self._sparse_embed_fn: Optional[Callable] = None
+        self.retrieval_top_k = settings.retrieval_top_k
 
     def set_sparse_embed_fn(self, sparse_embed_fn: Callable):
         self._sparse_embed_fn = sparse_embed_fn
@@ -84,7 +85,7 @@ class QdrantClientManager:
         
         return index.as_query_engine()
 
-    def get_retriever(self, top_k: int = 5, hybrid: bool = True, alpha: float = 0.7):
+    def get_retriever(self, hybrid: bool = True, alpha: float = 0.7):
         storage_context = self.get_storage_context()
         index = VectorStoreIndex.from_vector_store(
             self.get_vector_store(enable_hybrid=hybrid),
@@ -93,7 +94,7 @@ class QdrantClientManager:
         query_mode = VectorStoreQueryMode.HYBRID if hybrid else VectorStoreQueryMode.DEFAULT
 
         return index.as_retriever(
-            similarity_top_k=top_k,
+            similarity_top_k=self.retrieval_top_k,
             vector_store_query_mode=query_mode,
             alpha=alpha,
         )

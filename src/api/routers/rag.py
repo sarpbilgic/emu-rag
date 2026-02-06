@@ -38,17 +38,17 @@ async def ask(
     async def generator():
         try:
             async for event in rag_service.generate_response(query, session_id, user, db):
-                yield f"data: {json.dumps(event)}\n\n"
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
         except Exception as e:
             error_event = {
                 "type": "error",
                 "error": str(e)
             }
-            yield f"data: {json.dumps(error_event)}\n\n"
+            yield f"data: {json.dumps(error_event, ensure_ascii=False)}\n\n"
 
     return StreamingResponse(
         generator(),
-        media_type="text/event-stream",
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",

@@ -19,10 +19,12 @@ class Settings(BaseSettings):
     api_base_url: str
     anonymous_chat_ttl: int = 86400
     authenticated_chat_ttl: Optional[int] = None
-    reranker_enabled: bool = True
+    reranker_enabled: bool = False  
+    #reranker works but turned off for now due to performance issues
     reranker_model: str = "jinaai/jina-reranker-v1-turbo-en"
     reranker_top_k: int = 4  
-    retrieval_top_k: int = 8  
+    retrieval_top_k: int = 5
+   
 
     model_config = SettingsConfigDict(
         env_file=".env",
