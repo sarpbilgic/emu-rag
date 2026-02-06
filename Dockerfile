@@ -12,16 +12,13 @@ RUN pip install --no-cache-dir -r requirements-prod.txt
 
 ENV HF_HUB_DISABLE_SYMLINKS=1
 ENV HF_HOME=/app/.cache/huggingface
-ENV FASTEMBED_CACHE_PATH=/app/model_cache
 
 RUN python -c "\
 from fastembed import TextEmbedding, SparseTextEmbedding; \
-TextEmbedding(model_name='intfloat/multilingual-e5-large'); \
-SparseTextEmbedding(model_name='prithivida/Splade_PP_en_v1'); \
+TextEmbedding(model_name='intfloat/multilingual-e5-large', cache_dir='./model_cache'); \
+SparseTextEmbedding(model_name='prithivida/Splade_PP_en_v1', cache_dir='./model_cache'); \
 "
-
 #RUN python -c "from fastembed.rerank.cross_encoder import TextCrossEncoder; TextCrossEncoder(model_name='jinaai/jina-reranker-v1-turbo-en', cache_dir='./model_cache')"
-
 COPY . .
 
 EXPOSE 7860
